@@ -1,0 +1,85 @@
+% ============================================================
+% corex-preamble.tex
+% Preamble bersama untuk semua dokumen formal Corex.
+% Di-\input dari tiap dokumen (Proposal, NDA, Perjanjian Kerja, dst)
+% supaya perubahan styling cukup dilakukan di SATU tempat.
+% ============================================================
+
+\pdfminorversion=7
+
+\usepackage[a4paper,margin=2.5cm,top=3.2cm,bottom=3cm,headheight=22pt]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{parskip}
+\usepackage{fontenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{libertine}
+\usepackage{lastpage}
+
+% ---------- Palet Warna Corex ----------
+% Navy: warna dominan teks judul & garis. Signal Cyan: aksen SEMPIT saja
+% (heading rule, link, badge) -- konsisten dengan aturan di DESIGN-DNA.md,
+% supaya dokumen resmi pun tidak jadi "warna Corex dominan di semua tempat".
+\definecolor{corexnavy}{HTML}{0B0F19}
+\definecolor{corexsignal}{HTML}{00B39E}  % sedikit digelapkan dari #00D9C0 supaya kontras cukup di atas kertas putih
+\definecolor{corexgray}{HTML}{5B6472}
+\definecolor{corexlinegray}{HTML}{D5D9E0}
+
+% ---------- Judul Section ----------
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{corexnavy}}
+  {\thesection}{0.6em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{corexnavy}}
+  {\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.8em}
+\titlespacing*{\subsection}{0pt}{1.1em}{0.6em}
+
+% ---------- Hyperlink tanpa kotak norak ----------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=corexnavy,
+  urlcolor=corexsignal,
+  citecolor=corexnavy,
+  pdfcreator={Corex},
+}
+
+% ---------- Komando Kustom ----------
+% Kotak disclaimer wajib (dipakai corex-legal di NDA/Perjanjian Kerja)
+\newtcolorbox{corexdisclaimer}{
+  colback=corexnavy!4,
+  colframe=corexnavy,
+  boxrule=0.8pt,
+  arc=1pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt,
+  fontupper=\small
+}
+
+% Placeholder yang wajib diisi manusia -- dibuat MENCOLOK sengaja,
+% supaya draft tidak sengaja terkirim ke klien dengan bagian kosong.
+\newcommand{\CorexFill}[1]{\textcolor{red!70!black}{\textbf{[#1]}}}
+
+% Badge kecil status dokumen (DRAFT / FINAL) di title page
+\newcommand{\CorexStatusBadge}[1]{%
+  \colorbox{corexnavy}{\textcolor{white}{\small\bfseries\ #1\ }}%
+}
+
+% Blok tanda tangan standar
+\newcommand{\CorexSignatureBlock}[2]{%
+  \begin{minipage}[t]{0.45\textwidth}
+    \vspace{2.5cm}
+    \hrule
+    \vspace{4pt}
+    \textbf{#1} \\[2pt]
+    #2
+  \end{minipage}
+}

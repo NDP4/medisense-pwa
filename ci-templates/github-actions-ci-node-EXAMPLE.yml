@@ -1,0 +1,42 @@
+# Contoh CI workflow untuk stack Node.js (React/Next/Express/dst).
+# corex-release menyalin & MENYESUAIKAN ini ke .github/workflows/ci.yml
+# di project — jangan dipakai apa adanya kalau stack project bukan Node.js,
+# sesuaikan step "install" dan "test" dengan docs/TECH-STACK.md.
+
+name: Corex CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependency
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Test
+        run: npm test --if-present
+
+      - name: Security audit
+        run: npm audit --audit-level=high || true
+        # tidak menghentikan pipeline (|| true) -- temuan tetap dilaporkan
+        # tapi keputusan blocking tetap di corex-security/operator, bukan CI otomatis

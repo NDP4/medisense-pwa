@@ -1,0 +1,84 @@
+\documentclass[11pt]{article}
+
+% Path relatif: file project ada di docs/PROPOSAL.tex, template ada di
+% latex-template/ di root project -- sesuaikan path \input kalau struktur beda.
+\input{../corex-preamble.tex}
+
+\newcommand{\CorexDocTitle}{Proposal Proyek}
+\newcommand{\CorexClientName}{Warung Sembako Budi}
+\newcommand{\CorexDocDate}{12 Juli 2026}
+\newcommand{\CorexDocStatus}{DRAFT}
+\newcommand{\CorexLogoFile}{../logo/corex-logo-mark.pdf}
+
+\input{../corex-header-footer.tex}
+
+\begin{document}
+
+\input{../corex-titlepage.tex}
+
+\section{Ringkasan Kebutuhan}
+Warung Sembako Budi membutuhkan aplikasi Point of Sale (POS) untuk mencatat
+transaksi penjualan, mengelola stok barang, dan menghasilkan laporan
+penjualan harian. Aplikasi dipakai oleh 3 kasir secara bergantian dan harus
+tetap berfungsi saat koneksi internet terputus.
+
+\section{Lingkup Kerja}
+\subsection*{Termasuk dalam lingkup}
+\begin{itemize}[leftmargin=1.4em]
+  \item Modul transaksi kasir (offline-first)
+  \item Manajemen stok barang
+  \item Laporan penjualan harian
+  \item Manajemen akun untuk 3 kasir dengan role berbeda
+\end{itemize}
+
+\subsection*{Tidak termasuk dalam lingkup ini}
+\begin{itemize}[leftmargin=1.4em]
+  \item Integrasi pembayaran digital (dapat diusulkan terpisah)
+  \item Aplikasi mobile companion
+\end{itemize}
+
+\section{Timeline Estimasi}
+\begin{center}
+\begin{tabular}{@{}p{5.5cm}p{4cm}@{}}
+\toprule
+\textbf{Milestone} & \textbf{Estimasi Durasi} \\
+\midrule
+Setup \& Arsitektur & 3 hari \\
+Modul Transaksi Kasir & 5 hari \\
+Manajemen Stok & 4 hari \\
+Laporan Harian & 3 hari \\
+Testing \& Deployment & 3 hari \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Estimasi Biaya}
+Tier: \textbf{Corex Starter}
+
+\begin{center}
+\begin{tabular}{@{}p{6cm}p{4cm}@{}}
+\toprule
+\textbf{Item} & \textbf{Estimasi} \\
+\midrule
+Biaya Pengembangan & \CorexFill{ISI ANGKA} \\
+Skema Pembayaran & 50\% di muka, 50\% saat serah terima \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.3cm}
+\noindent\textit{Angka final adalah keputusan Corex dan dapat berubah
+setelah diskusi lebih lanjut dengan klien.}
+
+\section{Syarat \& Ketentuan Singkat}
+Dokumen ini adalah proposal, bukan kontrak yang mengikat secara hukum.
+Untuk Perjanjian Kerja dan NDA resmi, lihat dokumen terpisah di
+\texttt{docs/legal/}.
+
+\vspace{2cm}
+\noindent
+\CorexSignatureBlock{Pihak Corex}{\CorexFill{Nama, Tanggal}}
+\hfill
+\CorexSignatureBlock{Pihak Klien}{\CorexFill{Nama, Tanggal}}
+
+\end{document}

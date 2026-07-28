@@ -1,0 +1,22 @@
+# Tambahkan baris ini ke .gitignore project kalau project punya komponen ML.
+# Dataset mentah dan model terlatih SERING berukuran besar (puluhan MB - GB) --
+# git bukan tempat yang tepat untuk ini. Simpan di storage terpisah (Google
+# Drive, S3, atau folder lokal yang disepakati dengan operator), dan sebutkan
+# lokasinya di docs/ML-MODEL-CARD.md.
+
+# Dataset mentah
+ml/data/raw/
+*.csv
+*.parquet
+!ml/data/sample/*.csv   # kecuali sample kecil untuk testing/dokumentasi, boleh di-commit
+
+# Model terlatih (besar)
+ml/models/*.pkl
+ml/models/*.onnx
+ml/models/*.h5
+ml/models/*.pt
+
+# Environment & cache
+ml/**/__pycache__/
+ml/**/.ipynb_checkpoints/
+ml/venv/

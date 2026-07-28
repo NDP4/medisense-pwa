@@ -1,0 +1,28 @@
+% ============================================================
+% corex-titlepage.tex
+% Title page terpisah dari body dokumen. Butuh \CorexDocTitle,
+% \CorexClientName, \CorexDocDate, \CorexDocStatus (DRAFT/FINAL)
+% didefinisikan sebelum \input file ini.
+% ============================================================
+
+\begin{titlepage}
+\thispagestyle{corextitle}
+\centering
+\vspace*{1.5cm}
+
+\includegraphics[height=1.6cm]{\CorexLogoFile}
+
+\vspace{2.2cm}
+{\Huge\bfseries\color{corexnavy} \CorexDocTitle \par}
+\vspace{0.6cm}
+{\large\color{corexgray} Disiapkan untuk \CorexClientName \par}
+\vspace{0.4cm}
+{\large\color{corexgray} \CorexDocDate \par}
+
+\vspace{1cm}
+\CorexStatusBadge{\CorexDocStatus}
+
+\vfill
+{\small\color{corexgray} COREX --- Software House \par}
+\vspace{0.3cm}
+\end{titlepage}
