@@ -7,5 +7,12 @@
     "docs/DESIGN.md",
     "docs/ML-MODEL-CARD.md",
     "docs/ML-DEPLOYMENT.md"
-  ]
+  ],
+  "mcp": {
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp?project_ref=jtkajnfafbzbvtyraydx&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching",
+      "enabled": true
+    }
+  }
 }

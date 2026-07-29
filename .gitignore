@@ -52,10 +52,6 @@ ml/.venv/
 # Next.js auto-generated
 next-env.d.ts
 
-# Dataset mentah (NTD, MIMIC)
-ml/data/raw/
+# Dataset (semua data mentah, processed, backup)
+ml/data/
 dataset/
-
-# Kecuali synthetic data (sample untuk testing)
-!ml/data/synthetic/
-ml/data/synthetic/synthetic_labels.npy   # binary labels besar di ignore

@@ -65,3 +65,35 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - **Database migration executed** — `supabase/migrations/00001_init.sql` applied to Supabase Cloud project `jtkajnfafbzbvtyraydx`
 - **Seed data** — 1 puskesmas demo (`Puskesmas Medisense Demo`), 3 villages (`Desa Sehat`, `Desa Tangguh`, `Desa Mandiri`), 1 model version (`v1.0.0`)
 - **Connection note** — IPv6 direct connection unavailable; all DB operations via Management API (IPv4) or Supabase MCP with PAT
+
+### Added
+
+- **PWA Manifest** (`public/manifest.json`) — Standalone display, portrait, SVG icons, theme_color `#1E3A5F`
+- **Service Worker** (`public/sw.js`) — Cache-first (app shell + model files), Network-first (API with offline fallback)
+- **Design System** (`src/app/globals.css`) — Tailwind v4 custom theme: triage colors (hijau/kuning/merah), UI tokens, pulse/fade/shimmer animations
+
+### Frontend Components
+
+- **Triage Store** (`src/store/triage-store.ts`) — Zustand state: 5-step wizard, patient/symptom/voice/result, sync status, history
+- **Auth Store** (`src/store/auth-store.ts`) — Zustand state: login, user, token management
+- **ProgressStepper** (`src/components/ui/progress-stepper.tsx`) — 5-step circular indicator (active/completed/upcoming)
+- **BottomNav** (`src/components/ui/bottom-nav.tsx`) — Fixed bottom nav: Beranda, Triase Baru (FAB), Riwayat, Profil
+- **EmergencyButton** (`src/components/ui/emergency-button.tsx`) — Tombol 119 one-tap (red, 2x size, pulse animation)
+- **Symptom Icons** (`src/components/triage/symptom-icons.tsx`) — 7 SVG illustrations (Demam, Batuk, Sesak, Kebingungan, Nyeri Dada, Diare, Kebiruan)
+- **StepPatient** — Grid profil anggota keluarga (Diri Sendiri, Anak, Ibu, Ayah + custom)
+- **StepSymptoms** — 2-column grid of symptom cards with SVG icons, multi-select
+- **StepVoice** — Mic recording + manual text input + skip (optional)
+- **StepAnalyze** — TF.js on-device inference with progress bar + disclaimer
+- **StepResult** — Full background color by level (Hijau/Kuning/Merah), large icon, action list, 119 button (MERAH only), sync
+
+### Pages
+
+- **Home** (`/(pwa)/page.tsx`) — CTA triase baru card, quick stats (triase/offline/aman), 3 recent history cards
+- **Triage Flow** (`/(pwa)/triage/page.tsx`) — Dynamic import (lazy loaded), 5-step wizard container
+- **History** (`/(pwa)/history/page.tsx`) — Full history list with triage level indicators, empty state
+- **Profile** (`/(pwa)/profile/page.tsx`) — User card, menu items, demo disclaimer
+
+### Dependencies
+
+- **lucide-react** — SVG icon library for UI elements (replaces emoji/font icons)
+- **@serwist/next** — Service Worker utilities (manual SW deployed via `public/sw.js`)

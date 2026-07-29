@@ -10,7 +10,7 @@
 |-----------|--------|--------|---------|
 | M1: Foundation & Dataset | Minggu 1-3 | ✅ | MIMIC-IV demo + NTD eval |
 | M2: Model AI Demo | Minggu 4-8 | ✅ Selesai | Synthetic data, AUC 0.94-0.96, siap TF.js |
-| M3: PWA Inti | Minggu 6-12 | 🔄 **Aktif** | Menunggu corex-frontend |
+| M3: PWA Inti | Minggu 6-12 | ✅ **Frontend selesai** | 5-step triage, TF.js on-device, SW, 12 pages |
 | M4: Voice + Sync | Minggu 10-16 | ⏳ | |
 | M5: Keamanan & Testing | Minggu 14-20 | ⏳ | |
 | M6: Pilot Lapangan | Minggu 18-24 | ⏳ | |
@@ -71,6 +71,7 @@
 | 29 Jul 2026 | corex-backend | Build verified: npm run build ✅ |
 | 29 Jul 2026 | corex-backend | Database migration executed + seed data (puskesmas, villages, model_version) |
 | 29 Jul 2026 | corex-backend | Build re-verified: npm run build ✅ |
+| 29 Jul 2026 | corex-frontend | Implementasi PWA full: 5-step triage flow, TF.js inference, SW, pages |
 
 ## Backend Status
 ### API Routes (✅ All implemented)
@@ -97,7 +98,38 @@
 - `src/lib/medisense.ts` — TF.js Model Engine (load, predict, warmup, dispose)
 - `src/types/database.ts` — Full TypeScript types for all entities + API contracts
 
+### Frontend PWA (✅ Implemented)
+| Page/Component | File | Status |
+|----------------|------|--------|
+| Root Layout | `src/app/layout.tsx` | ✅ Inter font, SW reg, PWA metadata |
+| Theme System | `src/app/globals.css` | ✅ Tailwind v4 custom theme (triage colors, UI tokens) |
+| PWA Layout | `src/app/(pwa)/layout.tsx` | ✅ Shared shell + BottomNav |
+| Home / Dashboard | `src/app/(pwa)/page.tsx` | ✅ CTA triase baru, riwayat, quick stats |
+| Triage Wizard | `src/app/(pwa)/triage/page.tsx` | ✅ Dynamic import, lazy loaded |
+| Step 1: Pasien | `src/components/triage/step-patient.tsx` | ✅ Grid profil + pasien baru |
+| Step 2: Gejala | `src/components/triage/step-symptoms.tsx` | ✅ 2-col grid, SVG icons, multi-select |
+| Step 3: Suara | `src/components/triage/step-voice.tsx` | ✅ Mic recording + manual text + skip |
+| Step 4: Analisis | `src/components/triage/step-analyze.tsx` | ✅ TF.js on-device inference |
+| Step 5: Hasil | `src/components/triage/step-result.tsx` | ✅ Hijau/Kuning/Merah + 119 button |
+| History | `src/app/(pwa)/history/page.tsx` | ✅ Riwayat triase + empty state |
+| Profile | `src/app/(pwa)/profile/page.tsx` | ✅ Profil + menu |
+| ProgressStepper | `src/components/ui/progress-stepper.tsx` | ✅ 5-step circular indicator |
+| BottomNav | `src/components/ui/bottom-nav.tsx` | ✅ 4 items + FAB triase baru |
+| EmergencyButton | `src/components/ui/emergency-button.tsx` | ✅ 2x size, pulse, one-tap 119 |
+| Symptom SVGs | `src/components/triage/symptom-icons.tsx` | ✅ 7 SVG illustrations per DESIGN.md |
+| Triage Store | `src/store/triage-store.ts` | ✅ Zustand — 5 step state, sync, history |
+| Auth Store | `src/store/auth-store.ts` | ✅ Zustand — login, user, token |
+| PWA Manifest | `public/manifest.json` | ✅ Standalone, portrait, theme_color |
+| Service Worker | `public/sw.js` | ✅ Cache-first (shell/model), network-first (API) |
+| Preprocessing Contract | `public/preprocessing_contract.json` | ✅ Copied from ml/artifacts |
+
+### Build
+- **npm run build** ✅ (0 errors, 15 routes)
+- **npm run dev** ✅ (server starts in 2.2s)
+- First Load JS shared: **103 kB**
+- Middleware: 34.3 kB (JWT auth + RBAC)
+
 ## Langkah Selanjutnya
-1. ⏳ **corex-frontend** — implementasi PWA sesuai DESIGN.md + integrasi TF.js model + panggil API sync
-2. ⏳ **corex-security** — audit keamanan (auth, PII, data sync, RLS policies)
-3. ⏳ **corex-qa** — testing fungsional + edge case
+1. ⏳ **corex-security** — audit keamanan (auth, PII, data sync, RLS policies, SW integrity)
+2. ⏳ **corex-qa** — testing fungsional + edge case (5-step flow, offline mode, empty states)
+3. ⏳ **corex-maintenance** — bug fixes berdasarkan temuan security/QA

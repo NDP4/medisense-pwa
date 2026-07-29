@@ -1,1 +1,111 @@
 @import "tailwindcss";
+
+/* ── MediSense AI Design System ────────────────────────── */
+/* DESIGN.md v2 — Warna adalah bahasa pertama               */
+
+@theme {
+  /* Triage Colors — Bahasa utama aplikasi */
+  --color-hijau: #16A34A;
+  --color-hijau-bg: #DCFCE7;
+  --color-hijau-text: #FFFFFF;
+
+  --color-kuning: #EAB308;
+  --color-kuning-bg: #FEF9C3;
+  --color-kuning-text: #FFFFFF;
+
+  --color-merah: #DC2626;
+  --color-merah-bg: #FEE2E2;
+  --color-merah-text: #FFFFFF;
+
+  /* UI Colors */
+  --color-primary: #1E3A5F;
+  --color-surface: #FFFFFF;
+  --color-text-primary: #1F2937;
+  --color-text-secondary: #6B7280;
+  --color-border: #E5E7EB;
+  --color-muted: #F9FAFB;
+  --color-accent: #3B82F6;
+  --color-accent-bg: #EFF6FF;
+
+  /* Typography */
+  --font-family-inter: 'Inter', sans-serif;
+
+  /* Spacing tokens */
+  --space-2: 8px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+}
+
+/* ── Base Styles ─────────────────────────────────────── */
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-family: var(--font-family-inter);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--color-muted);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+}
+
+/* Touch target minimum 48dp */
+.touch-target {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+/* ── Utility Classes ──────────────────────────────────── */
+
+/* Emergency button pulse animation */
+@keyframes pulse-emergency {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-pulse-emergency {
+  animation: pulse-emergency 2s ease-in-out infinite;
+}
+
+/* Fade in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Skeleton loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Progress bar animation */
+@keyframes progress {
+  0% { width: 0%; }
+  20% { width: 15%; }
+  40% { width: 35%; }
+  60% { width: 55%; }
+  80% { width: 78%; }
+  95% { width: 95%; }
+  100% { width: 100%; }
+}
+
+.animate-progress {
+  animation: progress 3s ease-in-out forwards;
+}
