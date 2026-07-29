@@ -14,12 +14,17 @@ out/
 
 # ML - dataset mentah & model besar
 ml/data/raw/
-ml/data/*.csv
-ml/data/*.parquet
+ml/data/**/*.csv
+ml/data/**/*.parquet
+ml/data/**/*.npy
+ml/data/**/*.npz
 ml/models/*.pkl
 ml/models/*.onnx
 ml/models/*.h5
 ml/models/*.pt
+
+# Python venv
+ml/.venv/
 
 # Kecuali sample kecil
 !ml/models/sample/

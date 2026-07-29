@@ -85,6 +85,23 @@ Python (Keras/TF) → .h5 → .tflite (INT8 quantized) → TF.js Graph Model →
 Disimpan di public/models/ → Dload via Service Worker install
 ```
 
+### Model Serving Strategy (Updated)
+
+| Format | Size | Backend | Status |
+|--------|------|--------|--------|
+| TF.js GraphModel | 29 KB | Browser (WASM) | ✅ Ready at `public/models/medisense_model_tfjs/` |
+| TF-Lite FP16 | 17 KB | Mobile (fallback) | ✅ Ready |
+| TF-Lite INT8 | 8.8 KB | Mobile (optimized) | ✅ Ready |
+| Keras H5 | 531 KB | Training | ✅ Ready |
+
+**Model Path:** Load TF.js model from `/models/medisense_model_tfjs/model.json`
+**Inference:** 100% offline via TF.js WASM backend (no cloud calls for triage)
+**Features (23):** age, gender, bmi, heart_rate, respiratory_rate, systolic_bp, diastolic_bp, temperature, spo2, wbc, hemoglobin, platelet, creatinine, glucose, sodium, bicarbonate, fever, cough, dyspnea, confusion, chest_pain, diarrhea, cyanosis
+**Output:** [sepsis_prob, pneumonia_prob] — both float 0-1
+**Triage Logic:** If either prob > 0.7 → MERAH, > 0.3 → KUNING, else HIJAU
+
+⚠️ Current model trained on **synthetic data** for demo. Replace with real-clinical model when available.
+
 ### 2.3 Voice Recognition
 
 | Komponen | Pilihan | Justifikasi |
@@ -138,82 +155,208 @@ Disimpan di public/models/ → Dload via Service Worker install
 
 ## 3. Definisi Kontrak API
 
+> **Implementasi aktual**: `src/app/api/` — semua endpoint menggunakan Next.js App Router Route Handlers.
+> **Validasi**: Semua input divalidasi dengan Zod schema.
+> **Autentikasi**: Middleware di `src/middleware.ts` — JWT Bearer token, role-based access.
+> **⚠️ TIDAK** ada endpoint yang menerima gejala mentah untuk prediksi — prediksi AI 100% on-device di browser.
+
 ### 3.1 Sinkronisasi Data
 
-```
-POST /api/sync/triage
-  Deskripsi: Sinkronisasi sesi triase dari device ke cloud
-  Auth: Supabase JWT (anon key untuk login kader)
-  Body: {
-    triage_id: string,           // UUID generated on-device
-    patient_hash: string,        // SHA-256 hash of patient ID (anonim)
-    symptoms: number[],          // binary array of symptom codes
-    voice_text: string?,         // transcribed text (opsional)
-    ai_prediction: {
-      condition: string,         // kode kondisi (misal "sepsis")
-      confidence: number,        // 0.0 - 1.0
-      triage_level: "hijau"|"kuning"|"merah"
-    },
-    timestamp: string,           // ISO 8601
-    device_id: string,           // device identifier
-    audit_trail: object[]        // log keputusan AI
-  }
-  Response: { success: boolean, sync_timestamp: string }
+#### `POST /api/sync/triage`
+**Deskripsi:** Sinkronisasi sesi triase dari PWA client ke cloud. Menerima data yang **sudah diproses** di client (prediksi AI sudah selesai on-device).  
+**Auth:** JWT (kader/bidan/puskesmas)  
+**File:** `src/app/api/sync/triage/route.ts`
 
-GET /api/sync/pending
-  Deskripsi: Ambil daftar data yang perlu disinkronkan ke device
-  Auth: Supabase JWT
-  Response: { updates: object[], model_version: string }
+**Request Body:**
+```typescript
+{
+  triage_id: string;               // UUID generated on-device
+  device_id: string;               // UUID device identifier
+  kader_id: string;                // UUID kader
+  village_id?: string;             // UUID desa (opsional)
+  patient_hash: string;            // SHA-256 hash (anonim — NO PII)
+  patient_age?: number;            // usia tahun (opsional, agregasi)
+  patient_gender?: number;         // 0=F, 1=M (opsional, agregasi)
+  triage_level: "hijau"|"kuning"|"merah";
+  conditions: [{                   // hasil prediksi AI (multi-label)
+    condition: string;             // kode kondisi: "sepsis" | "pneumonia_balita"
+    confidence: number;            // 0.0 - 1.0
+    triage_level: "hijau"|"kuning"|"merah";
+  }];
+  triage_started_at: string;       // ISO 8601
+  triage_completed_at: string;     // ISO 8601
+  model_version?: string;          // versi model AI yang digunakan
+  app_version?: string;            // versi PWA
+  audit_trail?: object[];          // log keputusan AI (setiap langkah)
+  voice_text?: string;             // transkripsi voice (opsional)
+}
+```
+
+**Response (201):**
+```typescript
+{ success: true, sync_timestamp: "2026-07-29T..." }
+```
+
+**Response (400 — validasi gagal):**
+```typescript
+{ success: false, sync_timestamp: "...", error: "Validation failed: ..." }
+```
+
+#### `GET /api/sync/pending`
+**Deskripsi:** Ambil daftar data yang perlu disinkronkan ke device (model update, config change, rekomendasi).  
+**Auth:** JWT (kader/bidan/puskesmas)  
+**File:** `src/app/api/sync/pending/route.ts`  
+**Query:** `?device_id=UUID&current_model_version=v1.0`
+
+**Response:**
+```typescript
+{
+  updates: object[];                  // [{ type: "model_update", version, url, sha256, size_bytes }, ...]
+  model_version: string;             // versi model terbaru
+}
 ```
 
 ### 3.2 Dashboard Puskesmas
 
+#### `GET /api/dashboard/summary`
+**Deskripsi:** Ringkasan dashboard untuk Puskesmas — agregasi tren penyakit, distribusi triase, early warning.  
+**Auth:** JWT (role: bidan — lihat wilayah sendiri; puskesmas — full)  
+**File:** `src/app/api/dashboard/summary/route.ts`  
+**Query:** `?puskesmas_id=UUID&periode=30d` (periode: `7d`|`30d`|`90d`, default: `30d`)
+
+**Response:**
+```typescript
+{
+  total_triages: number;
+  triage_by_level: { hijau: number, kuning: number, merah: number };
+  conditions_breakdown: { sepsis: number, pneumonia_balita: number };
+  daily_trend: [{ date: string, total: number, merah: number, kuning: number, hijau: number }];
+  active_kaders: number;
+  unique_patients: number;           // berdasarkan patient_hash unik
+  early_warnings: [{                 // kondisi yang melonjak (>2SD dari rata2 7 hari)
+    condition: string;
+    current_count: number;
+    avg_7day: number;
+    z_score: number;
+    severity: "normal"|"warning"|"critical"|"insufficient_data";
+  }];
+}
 ```
-GET /api/dashboard/summary
-  Deskripsi: Ringkasan dashboard untuk Puskesmas
-  Auth: Supabase JWT (role: bidan/puskesmas)
-  Query: { puskesmas_id: string, periode: "7d"|"30d"|"90d" }
-  Response: {
-    total_triages: number,
-    triage_by_level: { hijau: number, kuning: number, merah: number },
-    conditions_breakdown: { sepsis: number, stroke_iskemik: number, ... },
-    active_kaders: number,
-    early_warning: object[]      // kondisi yang melonjak
-  }
 
-GET /api/dashboard/kaders
-  Deskripsi: Daftar kader dan performa
-  Auth: Supabase JWT (role: puskesmas)
-  Response: { kaders: { id, name, total_triages, accuracy, last_active }[] }
+#### `GET /api/dashboard/kaders`
+**Deskripsi:** Daftar kader dan ringkasan performa mereka.  
+**Auth:** JWT (role: puskesmas — full; bidan — wilayah sendiri)  
+**File:** `src/app/api/dashboard/kaders/route.ts`  
+**Query:** `?puskesmas_id=UUID`
+
+**Response:**
+```typescript
+{
+  kaders: [{
+    id: string;
+    full_name: string;
+    total_triages: number;
+    last_active: string | null;      // ISO 8601
+    village_name: string;
+  }];
+}
 ```
 
-### 3.3 Model Update (untuk Federated Learning — pasca MVP)
+### 3.3 Model & System
 
+#### `GET /api/models/latest`
+**Deskripsi:** Cek versi model AI terbaru.  
+**Auth:** Public (no auth) — response tanpa signature untuk MVP, akan ditambahkan HMAC di milestone lanjutan.  
+**File:** `src/app/api/models/latest/route.ts`
+
+**Response:**
+```typescript
+{
+  version: string;                   // semantic version, e.g. "1.0.0"
+  size_bytes: number;
+  url: string;                       // download URL
+  sha256: string;                    // integrity hash
+}
 ```
-GET /api/models/latest
-  Deskripsi: Cek versi model terbaru
-  Auth: None (public, butuh signature verification)
-  Response: { version: string, size_bytes: number, url: string, sha256: string }
 
-POST /api/federated/upload_gradients
-  Deskripsi: Upload gradien anonim (FL — pasca MVP)
-  Auth: Device signature
-  Body: { device_id: string, model_version: string, encrypted_gradients: string }
+#### `GET /api/health`
+**Deskripsi:** Health check — status server + koneksi database.  
+**Auth:** Public  
+**File:** `src/app/api/health/route.ts`
+
+**Response:**
+```typescript
+{
+  status: "ok" | "degraded";
+  timestamp: string;
+  version: string;
+  database: "connected" | "error: ...";
+}
 ```
 
 ### 3.4 Autentikasi
 
-```
-POST /api/auth/register
-  Deskripsi: Registrasi kader baru
-  Body: { name, puskesmas_id, role: "kader"|"bidan"|"puskesmas", region }
-  Response: { user_id, token }
+#### `POST /api/auth/register`
+**Deskripsi:** Registrasi user baru (kader, bidan, puskesmas). Membuat user di Supabase Auth + profil.  
+**Auth:** Public  
+**File:** `src/app/api/auth/register/route.ts`
 
-POST /api/auth/login
-  Deskripsi: Login
-  Body: { phone, password }
-  Response: { token, user, role }
+**Request Body:**
+```typescript
+{
+  full_name: string;                 // min 3, max 100
+  phone: string;                     // format Indonesia: 08xx / +628xx / 628xx
+  password: string;                  // min 8 karakter
+  role: "kader"|"bidan"|"puskesmas";
+  puskesmas_id: string;              // UUID, validasi exist
+  region?: string;                   // kecamatan/kabupaten
+}
 ```
+
+**Response (201):**
+```typescript
+{
+  user: { id: string, full_name: string, role: string, puskesmas_id: string };
+  token: string;                     // JWT untuk akses selanjutnya
+}
+```
+
+#### `POST /api/auth/login`
+**Deskripsi:** Login via phone + password.  
+**Auth:** Public  
+**File:** `src/app/api/auth/login/route.ts`
+
+**Request Body:**
+```typescript
+{
+  phone: string;
+  password: string;
+}
+```
+
+**Response (200):**
+```typescript
+{
+  user: { id: string, full_name: string, role: string, puskesmas_id: string };
+  token: string;                     // JWT
+}
+```
+
+### 3.5 Middleware — Autentikasi & Otorisasi
+
+**File:** `src/middleware.ts`
+
+| Route Pattern | Required Role | Status Code |
+|--------------|---------------|-------------|
+| `POST /api/sync/triage` | kader, bidan, puskesmas | 401/403 |
+| `GET /api/sync/pending` | kader, bidan, puskesmas | 401/403 |
+| `GET /api/dashboard/summary` | bidan, puskesmas | 401/403 |
+| `GET /api/dashboard/kaders` | puskesmas | 401/403 |
+| `POST /api/auth/*` | Public | — |
+| `GET /api/health` | Public | — |
+| `GET /api/models/latest` | Public | — |
+
+**Flow:** Request → Middleware ekstrak JWT dari `Authorization: Bearer <token>` → Decode payload → Cek role → Forward dengan header `x-medisense-user-id` dan `x-medisense-user-role`.
 
 ---
 
