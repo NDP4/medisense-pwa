@@ -12,22 +12,7 @@ out/
 .env.local
 .env*.local
 
-# ML - dataset mentah & model besar
-ml/data/raw/
-ml/data/**/*.csv
-ml/data/**/*.parquet
-ml/data/**/*.npy
-ml/data/**/*.npz
-ml/models/*.pkl
-ml/models/*.onnx
-ml/models/*.h5
-ml/models/*.pt
-
-# Python venv
-ml/.venv/
-
-# Kecuali sample kecil
-!ml/models/sample/
+# Kecuali public/models/ untuk PWA
 !public/models/
 
 # IDE
@@ -51,3 +36,26 @@ build/
 # SQLite
 *.db
 *.sqlite
+
+# Supabase CLI temp
+supabase/.temp/
+
+# Model artifacts (kecuali TF.js untuk PWA)
+ml/models/*.h5
+ml/models/*.tflite
+ml/models/*.pkl
+ml/models/eval_results.json
+
+# Python virtual env
+ml/.venv/
+
+# Next.js auto-generated
+next-env.d.ts
+
+# Dataset mentah (NTD, MIMIC)
+ml/data/raw/
+dataset/
+
+# Kecuali synthetic data (sample untuk testing)
+!ml/data/synthetic/
+ml/data/synthetic/synthetic_labels.npy   # binary labels besar di ignore

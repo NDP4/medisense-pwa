@@ -58,20 +58,10 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - **Config files** — `package.json`, `tsconfig.json`, `next.config.ts`, `.env.example`, `.gitignore`
 - **CI** — `.github/workflows/ci.yml`
 
-## [0.1.1] — 2026-07-29
+## [0.2.0] — 2026-07-29
 
 ### Changed
 
-- **SSR Auth** — Migrated from `@supabase/supabase-js` to `@supabase/ssr`:
-  - `createServerClient()` untuk Server Components / Route Handlers (cookie-based)
-  - `createBrowserClient()` untuk browser components
-  - `createMiddlewareClient()` untuk Edge Middleware (cookie-aware session refresh)
-  - `createServiceClient()` tetap pakai service_role key untuk admin operations
-- **Middleware** — Updated from manual JWT decode to Supabase SSR cookie-based auth:
-  - Menggunakan `supabase.auth.getUser()` untuk refresh session
-  - Mengambil role dari `user.user_metadata.role` (set saat register)
-  - Role-based access control tetap dipertahankan
-
-### Added
-
-- **Dependency** — `@supabase/ssr` untuk Next.js SSR auth support
+- **Database migration executed** — `supabase/migrations/00001_init.sql` applied to Supabase Cloud project `jtkajnfafbzbvtyraydx`
+- **Seed data** — 1 puskesmas demo (`Puskesmas Medisense Demo`), 3 villages (`Desa Sehat`, `Desa Tangguh`, `Desa Mandiri`), 1 model version (`v1.0.0`)
+- **Connection note** — IPv6 direct connection unavailable; all DB operations via Management API (IPv4) or Supabase MCP with PAT

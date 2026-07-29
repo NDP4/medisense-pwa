@@ -69,8 +69,8 @@
 | 29 Jul 2026 | corex-backend | Init Next.js project + all API routes |
 | 29 Jul 2026 | corex-backend | Database schema: 8 tables + RLS + views + early warning function |
 | 29 Jul 2026 | corex-backend | Build verified: npm run build ✅ |
-| 29 Jul 2026 | corex-backend | Install @supabase/ssr, update client (4 helpers), middleware SSR cookie-auth |
-| 29 Jul 2026 | corex-backend | Build re-verified ✅. Blocker: IPv6 unreachable for Supabase direct connection |
+| 29 Jul 2026 | corex-backend | Database migration executed + seed data (puskesmas, villages, model_version) |
+| 29 Jul 2026 | corex-backend | Build re-verified: npm run build ✅ |
 
 ## Backend Status
 ### API Routes (✅ All implemented)
@@ -85,30 +85,19 @@
 | `/api/models/latest` | GET | Public | `src/app/api/models/latest/route.ts` |
 | `/api/health` | GET | Public | `src/app/api/health/route.ts` |
 
-### SSR Auth (✅ @supabase/ssr integrated)
-| Komponen | Sebelum | Sesudah |
-|----------|---------|---------|
-| Client library | `@supabase/supabase-js` langsung | `@supabase/ssr` (createServerClient, createBrowserClient) |
-| Middleware | Manual JWT decode di Edge | Supabase SSR cookie-based session + getUser() |
-| Server Component | — (belum ada) | `createServerComponentClient()` — cookie-aware |
-| Service Admin | `createServiceClient()` — service_role key | Sama (tetap pakai service_role untuk admin ops) |
-
-### Database (✅ Schema Ready — 🚫 Belum Termigrasi)
-`supabase/migrations/00001_init.sql` — 8 tables, RLS policies, dashboard_summary view, get_early_warnings function
-
-**Blocker:** Supabase project `jtkajnfafbzbvtyraydx` hanya memiliki IPv6 (AAAA record) untuk direct connection. Environment saat ini tidak bisa reach IPv6. Perlu:
-1. **Service Role Key** dari dashboard Supabase (Settings > API > service_role) — untuk migration via REST API, ATAU
-2. **IPv4 add-on** diaktifkan — untuk koneksi PostgreSQL langsung via psql
+### Database (✅ Migrated to Supabase Cloud)
+- **Schema**: `supabase/migrations/00001_init.sql` — 8 tables, RLS policies, dashboard_summary view, get_early_warnings function
+- **Seed data**: 1 puskesmas demo, 3 villages, 1 model_version (v1.0.0)
+- **Connection**: Direct via IPv6 (blocked from this env), Management API via IPv4 ✅
 
 ### Infrastructure
 - `package.json`, `tsconfig.json`, `next.config.ts`, `postcss.config.mjs`, `.env.example`
-- `src/middleware.ts` — Supabase SSR cookie-based auth + RBAC
-- `src/lib/supabase.ts` — 4 client helpers: client (browser), server component, middleware, service admin
+- `src/middleware.ts` — JWT Bearer validation + RBAC
+- `src/lib/supabase.ts` — Server (service role) + client (anon key) helpers
 - `src/lib/medisense.ts` — TF.js Model Engine (load, predict, warmup, dispose)
 - `src/types/database.ts` — Full TypeScript types for all entities + API contracts
 
 ## Langkah Selanjutnya
-1. ⏳ **corex-backend** — ⚠️ **BLOCKED**: Migration database tidak bisa jalan karena IPv6 unreachable. Tunggu service role key / IPv4 add-on dari operator.
-2. ⏳ **corex-frontend** — implementasi PWA sesuai DESIGN.md + integrasi TF.js model + panggil API sync
-3. ⏳ **corex-security** — audit keamanan (auth, PII, data sync, RLS policies)
-4. ⏳ **corex-qa** — testing fungsional + edge case
+1. ⏳ **corex-frontend** — implementasi PWA sesuai DESIGN.md + integrasi TF.js model + panggil API sync
+2. ⏳ **corex-security** — audit keamanan (auth, PII, data sync, RLS policies)
+3. ⏳ **corex-qa** — testing fungsional + edge case
