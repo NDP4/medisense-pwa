@@ -18,6 +18,7 @@ const PROTECTED_API_ROUTES: Record<string, UserRole[]> = {
 const PUBLIC_ROUTES = [
   '/api/auth/login',
   '/api/auth/register',
+  '/api/puskesmas/list',
   '/api/models/latest',
   '/api/health',
 ];

@@ -168,6 +168,7 @@
 | 30 Jul 2026 | corex-frontend | **Profile page overhaul: expandable info panels (Data Pengguna/Privasi/Tentang), modal untuk hapus data & logout ✅** |
 | 31 Jul 2026 | corex-frontend | **Double sync fix + voice_text + Cloud History API + Kembali ke Beranda ✅** |
 | 31 Jul 2026 | corex-frontend | **Profile data mapping fix: API snake_case → store camelCase + phone & puskesmas_name di response + puskesmasName display ✅** |
+| 31 Jul 2026 | corex-frontend | **Endpoint /api/puskesmas/list + searchable puskesmas selector di register page ✅** |
 
 ## Backend Status
 ### API Routes (✅ All implemented)
@@ -181,6 +182,7 @@
 | `/api/auth/register` | POST | Public | `src/app/api/auth/register/route.ts` |
 | `/api/auth/login` | POST | Public | `src/app/api/auth/login/route.ts` |
 | `/api/models/latest` | GET | Public | `src/app/api/models/latest/route.ts` |
+| `/api/puskesmas/list` | GET | Public | `src/app/api/puskesmas/list/route.ts` |
 | `/api/health` | GET | Public | `src/app/api/health/route.ts` |
 
 ### Database (✅ Migrated to Supabase Cloud)

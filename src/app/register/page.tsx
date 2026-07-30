@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Phone, Lock, AlertCircle, Eye, EyeOff, ArrowLeft, Check } from 'lucide-react';
+import { User, Phone, Lock, AlertCircle, Eye, EyeOff, ArrowLeft, Check, Building, Search, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
+import type { Puskesmas } from '@/types/database';
 
 const ROLES = [
   { value: 'kader', label: 'Kader Kesehatan' },
@@ -25,6 +26,58 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'success'>('form');
+
+  // ── Puskesmas state ──
+  const [puskesmasList, setPuskesmasList] = useState<Pick<Puskesmas, 'id' | 'name' | 'address' | 'region'>[]>([]);
+  const [selectedPuskesmas, setSelectedPuskesmas] = useState<Pick<Puskesmas, 'id' | 'name' | 'address' | 'region'> | null>(null);
+  const [puskesmasSearch, setPuskesmasSearch] = useState('');
+  const [showPuskesmasDropdown, setShowPuskesmasDropdown] = useState(false);
+  const [puskesmasLoading, setPuskesmasLoading] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // ── Fetch puskesmas list saat komponen mount ──
+  useEffect(() => {
+    let cancelled = false;
+    const fetchPuskesmas = async () => {
+      setPuskesmasLoading(true);
+      try {
+        const res = await fetch('/api/puskesmas/list');
+        const data = await res.json();
+        if (!cancelled && data.puskesmas) {
+          setPuskesmasList(data.puskesmas);
+        }
+      } catch {
+        // Silent fail — akan muncul error waktu submit
+      } finally {
+        if (!cancelled) setPuskesmasLoading(false);
+      }
+    };
+    fetchPuskesmas();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Filter puskesmas berdasarkan search query ──
+  const filteredPuskesmas = useMemo(() => {
+    if (!puskesmasSearch.trim()) return puskesmasList;
+    const q = puskesmasSearch.toLowerCase();
+    return puskesmasList.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.region.toLowerCase().includes(q) ||
+        (p.address && p.address.toLowerCase().includes(q))
+    );
+  }, [puskesmasList, puskesmasSearch]);
+
+  // ── Tutup dropdown saat klik di luar ──
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowPuskesmasDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handlePhoneChange = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -53,6 +106,10 @@ export default function RegisterPage() {
       setError('Nomor telepon tidak valid');
       return;
     }
+    if (!selectedPuskesmas) {
+      setError('Pilih puskesmas tempat Anda bertugas');
+      return;
+    }
     if (password.length < 8) {
       setError('Password minimal 8 karakter');
       return;
@@ -73,6 +130,7 @@ export default function RegisterPage() {
           phone: '+' + phone.trim(),
           password,
           role,
+          puskesmas_id: selectedPuskesmas.id,
         }),
       });
 
@@ -100,7 +158,7 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
-  }, [fullName, phone, password, confirmPassword, role, login, router]);
+  }, [fullName, phone, password, confirmPassword, role, selectedPuskesmas, login, router]);
 
   if (step === 'success') {
     return (
@@ -132,7 +190,7 @@ export default function RegisterPage() {
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-text-primary">Daftar Akun Baru</h1>
           <p className="text-sm text-text-secondary mt-1">
-            Untuk menggunakan MediSense, daftar sebagai kader/bidan/puskesmas
+            Daftar sebagai kader, bidan, atau petugas puskesmas
           </p>
         </div>
 
@@ -206,6 +264,95 @@ export default function RegisterPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* ── Searchable Puskesmas Selector ── */}
+          <div ref={dropdownRef} className="relative">
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Puskesmas <span className="text-red-500">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowPuskesmasDropdown(!showPuskesmasDropdown)}
+              className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                selectedPuskesmas
+                  ? 'border-accent bg-accent/5'
+                  : 'border-border bg-surface hover:border-accent/50'
+              }`}
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Building className="w-4 h-4 text-primary" strokeWidth={1.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                {selectedPuskesmas ? (
+                  <>
+                    <p className="text-sm font-medium text-text-primary">{selectedPuskesmas.name}</p>
+                    <p className="text-xs text-text-secondary truncate">{selectedPuskesmas.region}</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-text-secondary">
+                    {puskesmasLoading ? 'Memuat daftar puskesmas...' : 'Ketuk untuk pilih puskesmas'}
+                  </p>
+                )}
+              </div>
+              <ChevronDown className={`w-5 h-5 text-text-secondary transition-transform ${showPuskesmasDropdown ? 'rotate-180' : ''}`} strokeWidth={1.5} />
+            </button>
+
+            {/* Dropdown */}
+            {showPuskesmasDropdown && (
+              <div className="absolute z-20 left-0 right-0 mt-1 bg-surface border border-border rounded-xl shadow-lg overflow-hidden">
+                {/* Search input */}
+                <div className="relative p-2 border-b border-border">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+                  <input
+                    type="text"
+                    value={puskesmasSearch}
+                    onChange={(e) => setPuskesmasSearch(e.target.value)}
+                    placeholder="Cari puskesmas..."
+                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-muted text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/20 border border-transparent focus:border-accent"
+                    autoFocus
+                  />
+                </div>
+
+                {/* List */}
+                <div className="max-h-48 overflow-y-auto">
+                  {filteredPuskesmas.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-text-secondary">
+                      {puskesmasSearch ? 'Puskesmas tidak ditemukan' : 'Tidak ada puskesmas tersedia'}
+                    </div>
+                  ) : (
+                    filteredPuskesmas.map((p) => {
+                      const isSelected = selectedPuskesmas?.id === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPuskesmas(p);
+                            setShowPuskesmasDropdown(false);
+                            setPuskesmasSearch('');
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-muted transition-colors border-b border-border last:border-b-0 ${
+                            isSelected ? 'bg-accent/5' : ''
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Building className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-text-primary">{p.name}</p>
+                            <p className="text-xs text-text-secondary truncate">{p.region}{p.address ? ` — ${p.address}` : ''}</p>
+                          </div>
+                          {isSelected && (
+                            <Check className="w-5 h-5 text-accent shrink-0" strokeWidth={2} />
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
