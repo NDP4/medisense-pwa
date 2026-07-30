@@ -1,6 +1,7 @@
 'use client';
 
-import { ClipboardList } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ClipboardList, RefreshCw } from 'lucide-react';
 import { useTriageStore } from '@/store/triage-store';
 
 /* ── History Page ─────────────────────────────────────── */
@@ -19,13 +20,35 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 export default function HistoryPage() {
-  const { history } = useTriageStore();
+  const { history, fetchHistoryFromCloud } = useTriageStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch history from cloud on mount
+  useEffect(() => {
+    fetchHistoryFromCloud();
+  }, [fetchHistoryFromCloud]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchHistoryFromCloud();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   return (
     <div className="px-4 pt-6">
-      <h1 className="text-xl font-bold text-text-primary mb-6">
-        Riwayat Triase
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-bold text-text-primary">
+          Riwayat Triase
+        </h1>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 text-sm text-accent font-medium hover:underline disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span>Sync</span>
+        </button>
+      </div>
 
       {history.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[50vh]">

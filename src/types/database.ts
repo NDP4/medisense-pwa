@@ -178,6 +178,8 @@ export namespace API {
       full_name: string;
       role: UserRole;
       puskesmas_id: string | null;
+      puskesmas_name?: string;
+      phone?: string;
     };
     token: string;
   }

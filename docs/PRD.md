@@ -214,18 +214,20 @@ Target pengguna: **63 juta penduduk wilayah 3T** yang dilayani oleh kader keseha
 
 ---
 
-## 10. Keamanan & Privasi Data (Checklist Awal)
+## 10. Keamanan & Privasi Data (Checklist Awal & Status Audit)
 
 Prioritas tinggi mengingat ini adalah **data kesehatan**.
 
-- [ ] **Wajib:** Enkripsi data lokal dengan SQLCipher (AES-256)
-- [ ] **Wajib:** Tidak ada data pasien (PII) dikirim ke cloud — hanya metadata anonim untuk dashboard
-- [ ] **Wajib:** Disclaimer medis otomatis pada SETIAP hasil triase (bukan pengganti diagnosis dokter)
-- [ ] **Wajib:** Audit trail untuk setiap keputusan AI (yang bisa direview Puskesmas)
-- [ ] **Wajib:** UU PDP 2022 compliance review sebelum rilis
-- [ ] **Wajib:** HTTPS untuk semua koneksi cloud
-- [ ] **P1:** Differential privacy untuk federated learning (ε = 1.0, δ = 10⁻⁵)
-- [ ] **P1:** Validasi input di semua boundary (voice, gambar, form)
+| Item | Status | Severity | Referensi Audit |
+|------|--------|:--------:|-----------------|
+| **Wajib:** Enkripsi data lokal dengan Web Crypto API (AES-256-GCM) | ❌ Tidak ada implementasi | HIGH | SECURITY-AUDIT.md §1.1 |
+| **Wajib:** Tidak ada data pasien (PII) dikirim ke cloud — hanya metadata anonim | ⚠️ Sebagian | HIGH | SECURITY-AUDIT.md §5.1 (hash lemah, voice_text berisiko) |
+| **Wajib:** Disclaimer medis otomatis pada SETIAP hasil triase | ❌ Tidak terkonfirmasi | MEDIUM | SECURITY-AUDIT.md §2.3 |
+| **Wajib:** Audit trail untuk setiap keputusan AI | ❌ Belum diimplementasi | MEDIUM | SECURITY-AUDIT.md §2.2 |
+| **Wajib:** UU PDP 2022 compliance review | ❌ Multiple gaps | HIGH | SECURITY-AUDIT.md §2.1-2.4 |
+| **Wajib:** HTTPS untuk semua koneksi cloud | ✅ Otomatis dari Vercel | — | SECURITY-AUDIT.md §5 |
+| **P1:** Differential privacy (ε=1.0, δ=10⁻⁵) untuk federated learning | ⏳ Milestone 7 | MEDIUM | SECURITY-AUDIT.md §3.1 |
+| **P1:** Validasi input di semua boundary | ✅ Zod schema di semua endpoint | — | SECURITY-AUDIT.md §5 |
 
 ---
 

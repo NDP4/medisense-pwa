@@ -13,7 +13,7 @@ import { createClientClient } from '@/lib/supabase';
 import type { API } from '@/types/database';
 
 const loginSchema = z.object({
-  phone: z.string().min(10).max(15),
+  phone: z.string().min(8).max(20),
   password: z.string().min(1).max(100),
 });
 
@@ -32,9 +32,13 @@ export async function POST(request: NextRequest) {
     const { phone, password } = parsed.data;
     const supabase = createClientClient();
 
-    // ─── Login via phone ───
+    // ─── Login via email (phone login disabled di Supabase) ───
+    // Normalize phone: same format as register (+6281xxx → 6281xxx)
+    const digits = phone.replace(/\D/g, '');
+    const normalizedPhone = digits.startsWith('0') ? '62' + digits.slice(1) : digits.startsWith('62') ? digits : '62' + digits;
+    const email = `${normalizedPhone}@medisense.local`;
     const { data: authData, error: loginError } = await supabase.auth.signInWithPassword({
-      phone,
+      email,
       password,
     });
 
@@ -54,10 +58,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ─── Get user profile ───
-    const { data: profile } = await supabase
+    // ─── Get user profile (pakai service client — bypass RLS karena user_profiles belum punya SELECT policy) ───
+    const { createServiceClient } = await import('@/lib/supabase');
+    const adminSupabase = createServiceClient();
+    const { data: profile } = await adminSupabase
       .from('user_profiles')
-      .select('full_name, role, puskesmas_id')
+      .select('full_name, role, puskesmas_id, phone')
       .eq('id', authData.user.id)
       .single();
 
@@ -68,7 +74,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userProfile = profile as unknown as { full_name: string; role: string; puskesmas_id: string | null };
+    const userProfile = profile as unknown as { full_name: string; role: string; puskesmas_id: string | null; phone: string | null };
+
+    // Fetch puskesmas name separately for display
+    let puskesmasName: string | undefined;
+    if (userProfile.puskesmas_id) {
+      const { data: puskesmas } = await adminSupabase
+        .from('puskesmas')
+        .select('name')
+        .eq('id', userProfile.puskesmas_id)
+        .single();
+      puskesmasName = puskesmas?.name ?? undefined;
+    }
 
     return NextResponse.json({
       user: {
@@ -76,6 +93,8 @@ export async function POST(request: NextRequest) {
         full_name: userProfile.full_name,
         role: userProfile.role as API.AuthResponse['user']['role'],
         puskesmas_id: userProfile.puskesmas_id,
+        puskesmas_name: puskesmasName,
+        phone: userProfile.phone ?? '',
       },
       token: authData.session?.access_token ?? '',
     } satisfies API.AuthResponse);

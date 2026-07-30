@@ -1,0 +1,102 @@
+{
+  "info": {
+    "name": "MediSense Auth Test",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. REGISTER",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.token) {",
+              "  pm.collectionVariables.set('token', json.token);",
+              "  console.log('Token tersimpan:', json.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Nama Kader Test\",\n  \"phone\": \"08123456789\",\n  \"password\": \"rahasia123\",\n  \"role\": \"kader\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "2. LOGIN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.token) {",
+              "  pm.collectionVariables.set('token', json.token);",
+              "  console.log('Token tersimpan:', json.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"08123456789\",\n  \"password\": \"rahasia123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "3. HEALTH CHECK",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        }
+      }
+    },
+    {
+      "name": "4. SYNC TRIAGE (dengan token)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"triage_id\": \"test-123\",\n  \"device_id\": \"postman-test\",\n  \"kader_id\": \"test-kader\",\n  \"patient_hash\": \"abc123\",\n  \"triage_level\": \"hijau\",\n  \"conditions\": [{\"condition\": \"sepsis\", \"confidence\": 0.1, \"triage_level\": \"hijau\"}]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/sync/triage",
+          "host": ["{{base_url}}"],
+          "path": ["api", "sync", "triage"]
+        }
+      }
+    }
+  ]
+}

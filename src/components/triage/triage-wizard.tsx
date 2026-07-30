@@ -8,8 +8,25 @@ import StepSymptoms from './step-symptoms';
 import StepVoice from './step-voice';
 import StepAnalyze from './step-analyze';
 import StepResult from './step-result';
+import { syncManager } from '@/lib/sync';
 
 /* ── Triage Wizard — Controller 5 Langkah ───────────── */
+
+async function generatePatientHash(id: string, salt: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${id}:${salt}`);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function sanitizeVoiceText(text: string | null): string | undefined {
+  if (!text) return undefined;
+  return text
+    .replace(/\b\w{30,}\b/g, '[terlalu panjang]')
+    .replace(/\b\d{15,}\b/g, '[angka panjang]');
+}
 
 export default function TriageWizard() {
   const {
@@ -21,6 +38,7 @@ export default function TriageWizard() {
     finishAnalysis,
     resetTriage,
     syncStatus,
+    syncError,
     setSyncStatus,
     triageSessionId,
     triageStartedAt,
@@ -54,10 +72,47 @@ export default function TriageWizard() {
   }, [setStep]);
 
   const handleAnalysisComplete = useCallback(
-    (result: TriageResult) => {
+    async (result: TriageResult) => {
       finishAnalysis(result);
+
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const salt = `medisense-2026-${today}`;
+        const patientHash = await generatePatientHash(selectedPatient?.id || 'unknown', salt);
+        const sanitizedVoiceText = sanitizeVoiceText(voiceText);
+
+        syncManager.addTriageSession({
+          triage_id: triageSessionId || crypto.randomUUID(),
+          device_id: syncManager.getDeviceId(),
+          kader_id: syncManager.getKaderId(),
+          patient_hash: patientHash,
+          patient_age: selectedPatient?.age,
+          patient_gender: selectedPatient?.gender,
+          triage_level: result.triageLevel,
+          conditions: result.conditions.length > 0
+            ? result.conditions.map(c => ({
+                condition: c.condition,
+                confidence: c.confidence,
+                triage_level: c.triageLevel,
+              }))
+            : [{ condition: 'tidak_ada', confidence: 0, triage_level: result.triageLevel }],
+          triage_started_at: triageStartedAt || new Date().toISOString(),
+          triage_completed_at: new Date().toISOString(),
+          model_version: '1.0.0',
+          app_version: '0.2.1',
+          voice_text: sanitizedVoiceText,
+        });
+
+        // Try immediate sync (the sync manager has periodic sync too,
+        // but this ensures data is sent ASAP)
+        if (typeof window !== 'undefined' && navigator.onLine) {
+          syncManager.syncNow().catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[Triage] Failed to add to sync:', err);
+      }
     },
-    [finishAnalysis]
+    [finishAnalysis, triageSessionId, triageStartedAt, selectedPatient, voiceText]
   );
 
   const handleAnalysisError = useCallback((msg: string) => {
@@ -72,57 +127,33 @@ export default function TriageWizard() {
     setSyncStatus('syncing');
 
     try {
-      // Attempt to sync to backend if online
-      const token = localStorage.getItem('medisense_token');
-      if (token && navigator.onLine) {
-        const payload = {
-          triage_id: triageSessionId,
-          device_id: 'pwa-demo-device',
-          kader_id: 'demo-kader',
-          village_id: undefined,
-          patient_hash: selectedPatient?.id
-            ? await crypto.subtle.digest('SHA-256', new TextEncoder().encode(selectedPatient.id)).then(buf =>
-                Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
-              )
-            : 'demo-hash',
-          patient_age: selectedPatient?.age,
-          patient_gender: selectedPatient?.gender,
-          triage_level: result?.triageLevel ?? 'hijau',
-          conditions: (result?.conditions ?? []).map(c => ({
-            condition: c.condition,
-            confidence: c.confidence,
-            triage_level: c.triageLevel,
-          })),
-          triage_started_at: triageStartedAt ?? new Date().toISOString(),
-          triage_completed_at: new Date().toISOString(),
-          model_version: '1.0.0',
-          app_version: '0.2.0',
-          voice_text: voiceText ?? undefined,
-        };
+      // Use syncManager.syncNow() instead of direct POST to avoid double sync.
+      // Data is already in Yjs (from handleAnalysisComplete).
+      // syncManager will send any pending sessions to the API.
+      if (typeof window !== 'undefined' && navigator.onLine) {
+        await syncManager.syncNow();
+      }
 
-        const res = await fetch('/api/sync/triage', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
+      try {
+        syncManager.registerBackgroundSync();
+      } catch { /* SW may not be ready */ }
 
-        if (res.ok) {
-          setSyncStatus('synced');
-        } else {
-          // Save locally — cloud sync will happen later
-          setSyncStatus('synced');
-        }
+      // Read actual status from sync manager
+      const mgrStatus = syncManager.getStatus();
+      if (mgrStatus === 'synced') {
+        setSyncStatus('synced');
+      } else if (mgrStatus === 'error') {
+        setSyncStatus('error', 'Gagal sinkronisasi');
       } else {
-        // Offline — save locally
+        // If sync manager says idle but we couldn't start a proper sync,
+        // assume synced (data is safe in Yjs/IndexedDB)
         setSyncStatus('synced');
       }
-    } catch {
-      setSyncStatus('synced'); // Still mark as synced locally
+    } catch (err) {
+      setSyncStatus('error', err instanceof Error ? err.message : 'Gagal sinkronisasi');
+      console.warn('[Sync] Error:', err);
     }
-  }, [triageSessionId, triageStartedAt, selectedPatient, result, voiceText, setSyncStatus]);
+  }, [setSyncStatus]);
 
   const handleExitConfirm = useCallback(() => {
     resetTriage();

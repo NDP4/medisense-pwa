@@ -14,6 +14,14 @@ function buildRawInput(
   symptoms: Set<number>,
   age: number,
   gender: number,
+  vitals: {
+    heart_rate?: number;
+    respiratory_rate?: number;
+    temperature?: number;
+    spo2?: number;
+    systolic_bp?: number;
+    diastolic_bp?: number;
+  } = {},
 ): {
   age: number; gender: number; bmi: number;
   heart_rate: number; respiratory_rate: number;
@@ -31,12 +39,12 @@ function buildRawInput(
     age,
     gender,
     bmi: 22,
-    heart_rate: 75,
-    respiratory_rate: 16,
-    systolic_bp: 120,
-    diastolic_bp: 80,
-    temperature: 36.8,
-    spo2: 98,
+    heart_rate: vitals.heart_rate ?? 75,
+    respiratory_rate: vitals.respiratory_rate ?? 16,
+    systolic_bp: vitals.systolic_bp ?? 120,
+    diastolic_bp: vitals.diastolic_bp ?? 80,
+    temperature: vitals.temperature ?? 36.8,
+    spo2: vitals.spo2 ?? 98,
     wbc: 7.5,
     hemoglobin: 14,
     platelet: 250,
@@ -82,7 +90,8 @@ export default function StepAnalyze({ onComplete, onError }: StepAnalyzeProps) {
         // Build input
         const age = selectedPatient?.age ?? 30;
         const gender = selectedPatient?.gender ?? 0;
-        const input = buildRawInput(selectedSymptoms, age, gender);
+        const { vitalSigns } = useTriageStore.getState();
+        const input = buildRawInput(selectedSymptoms, age, gender, vitalSigns);
 
         setAnalysisProgress(40);
 
@@ -130,6 +139,40 @@ export default function StepAnalyze({ onComplete, onError }: StepAnalyzeProps) {
         };
 
         setAnalysisProgress(100);
+
+        // Audit trail
+        const auditTrail = {
+          timestamp: new Date().toISOString(),
+          modelVersion: '1.0.0',
+          inputFeatures: {
+            age, gender, fever: input.fever, cough: input.cough,
+            dyspnea: input.dyspnea, confusion: input.confusion,
+            chest_pain: input.chest_pain, diarrhea: input.diarrhea,
+            cyanosis: input.cyanosis,
+          },
+          rawOutput: [prediction.sepsis, prediction.pneumonia_balita],
+          triageLevel: level,
+          deviceFingerprint: navigator.userAgent?.slice(0, 50) || 'unknown',
+        };
+        console.log('[AUDIT] AI Decision:', JSON.stringify(auditTrail));
+
+        // Simpan audit trail ke IndexedDB
+        try {
+          const { saveTriageSession } = await import('@/lib/db');
+          await saveTriageSession({
+            id: auditTrail.timestamp + '-' + Math.random().toString(36).slice(2, 8),
+            patientName: selectedPatient?.name || 'Unknown',
+            patientAge: selectedPatient?.age || 0,
+            patientGender: selectedPatient?.gender ?? 0,
+            triageLevel: level,
+            conditions: JSON.stringify(conditions.map(c => c.condition)),
+            confidence: prediction.maxProbability,
+            modelVersion: '1.0.0',
+            createdAt: new Date().toISOString(),
+          });
+        } catch (err) {
+          console.warn('[Audit] Failed to persist:', err);
+        }
 
         // Brief delay for UX
         setTimeout(() => onComplete(result), 600);

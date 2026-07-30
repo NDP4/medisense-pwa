@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
+import { saveTriageSession, getDecryptedHistory } from '@/lib/db';
 
 /* ── Triage Zustand Store ───────────────────────────── */
 /* Mengelola state keseluruhan alur triase 5 langkah      */
@@ -92,7 +93,7 @@ interface TriageState {
   nextStep: () => void;
   prevStep: () => void;
 
-  selectPatient: (patient: Patient) => void;
+  selectPatient: (patient: Patient | null) => void;
 
   toggleSymptom: (featureIndex: number) => void;
   setVitalSign: (key: keyof VitalSigns, value: number | undefined) => void;
@@ -108,6 +109,8 @@ interface TriageState {
 
   resetTriage: () => void;
   addToHistory: (result: TriageResult) => void;
+  loadHistory: () => Promise<void>;
+  fetchHistoryFromCloud: () => Promise<void>;
 }
 
 // ── Symptom Definitions ────────────────────────────────
@@ -303,7 +306,155 @@ export const useTriageStore = create<TriageState>((set, get) => ({
 
   // ── History ──
   addToHistory: (result) => {
-    const history = [result, ...get().history].slice(0, 50); // keep last 50
+    const history = [result, ...get().history].slice(0, 50);
     set({ history });
+
+    const state = get();
+    const patient = state.selectedPatient;
+    saveTriageSession({
+      id: state.triageSessionId || uuidv4(),
+      patientName: patient?.name || 'Unknown',
+      patientAge: patient?.age || 0,
+      patientGender: patient?.gender ?? 0,
+      triageLevel: result.triageLevel,
+      conditions: JSON.stringify(result.conditions.map(c => c.condition)),
+      confidence: result.conditions.reduce((max, c) => Math.max(max, c.confidence), 0),
+      voiceText: state.voiceText || undefined,
+      modelVersion: '1.0.0',
+      createdAt: result.timestamp,
+    });
+  },
+
+  loadHistory: async () => {
+    try {
+      const records = await getDecryptedHistory();
+      const history: TriageResult[] = records.map(h => {
+        const level = h.triageLevel as 'hijau' | 'kuning' | 'merah';
+        // Parse conditions from JSON string stored in IndexedDB
+        let conditionStrings: string[] = [];
+        try {
+          const parsed = JSON.parse(h.conditions);
+          conditionStrings = Array.isArray(parsed) ? parsed : [h.conditions];
+        } catch {
+          conditionStrings = h.conditions ? [h.conditions] : [];
+        }
+        // Build TriageCondition array from condition strings
+        const conditions: TriageCondition[] = conditionStrings.map(c => ({
+          condition: c,
+          label: c === 'tidak_ada' ? 'Tidak ada kondisi terdeteksi'
+            : c === 'sepsis' ? 'Sepsis'
+            : c === 'pneumonia_balita' ? 'Pneumonia'
+            : c,
+          confidence: c === conditionStrings[0] ? h.confidence : 0,
+          triageLevel: level,
+        }));
+        return {
+          triageLevel: level,
+          triageLabel: getTriageLabel(level),
+          conditions,
+          recommendations: getRecommendations(level, conditionStrings),
+          timestamp: h.createdAt,
+        };
+      });
+      set({ history });
+    } catch (err) {
+      console.warn('[TriageStore] Failed to load history:', err);
+    }
+  },
+
+  fetchHistoryFromCloud: async () => {
+    try {
+      const token = sessionStorage.getItem('medisense_token');
+      if (!token || typeof navigator === 'undefined' || !navigator.onLine) {
+        return;
+      }
+
+      const res = await fetch('/api/sync/history', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (!data.success || !Array.isArray(data.history)) return;
+
+      // Transform cloud records into TriageResult[]
+      // The Supabase conditions column is JSONB: [{condition, confidence, triage_level}, ...]
+      const cloudHistory: TriageResult[] = data.history.map((h: any) => {
+        const level = h.triage_level as 'hijau' | 'kuning' | 'merah';
+        let conditionStrings: string[] = [];
+        let maxConfidence = 0;
+
+        // Parse conditions from the JSONB array
+        try {
+          if (Array.isArray(h.conditions)) {
+            conditionStrings = h.conditions.map((c: any) => {
+              if (typeof c === 'string') return c;
+              const cond = c.condition || '';
+              if (typeof c.confidence === 'number') {
+                maxConfidence = Math.max(maxConfidence, c.confidence);
+              }
+              return cond;
+            }).filter(Boolean);
+          } else if (typeof h.conditions === 'string') {
+            const parsed = JSON.parse(h.conditions);
+            if (Array.isArray(parsed)) {
+              conditionStrings = parsed.map((c: any) => {
+                if (typeof c === 'string') return c;
+                const cond = c.condition || '';
+                if (typeof c.confidence === 'number') {
+                  maxConfidence = Math.max(maxConfidence, c.confidence);
+                }
+                return cond;
+              }).filter(Boolean);
+            } else {
+              conditionStrings = [h.conditions];
+            }
+          }
+        } catch {
+          conditionStrings = [];
+        }
+
+        if (conditionStrings.length === 0) {
+          conditionStrings = ['tidak_ada'];
+        }
+
+        const conditions = conditionStrings.map((c: string) => ({
+          condition: c,
+          label:
+            c === 'tidak_ada'
+              ? 'Tidak ada kondisi terdeteksi'
+              : c === 'sepsis'
+                ? 'Sepsis'
+                : c === 'pneumonia_balita'
+                  ? 'Pneumonia'
+                  : c,
+          confidence: maxConfidence,
+          triageLevel: level,
+        }));
+
+        return {
+          triageLevel: level,
+          triageLabel: getTriageLabel(level),
+          conditions,
+          recommendations: getRecommendations(level, conditionStrings),
+          timestamp: h.triage_completed_at || h.triage_started_at || new Date().toISOString(),
+        };
+      });
+
+      // Merge with local history: deduplicate by timestamp
+      const existing = get().history;
+      const existingTimestamps = new Set(existing.map((r) => r.timestamp));
+      const newFromCloud = cloudHistory.filter(
+        (r) => !existingTimestamps.has(r.timestamp)
+      );
+
+      if (newFromCloud.length > 0) {
+        const merged = [...newFromCloud, ...existing].slice(0, 50);
+        set({ history: merged });
+      }
+    } catch (err) {
+      console.warn('[TriageStore] Failed to fetch history from cloud:', err);
+    }
   },
 }));

@@ -9,32 +9,88 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServiceClient } from '@/lib/supabase';
-import type { API, UserProfile } from '@/types/database';
+import { createServiceClient, createClientClient } from '@/lib/supabase';
+import type { API } from '@/types/database';
+
+// Rate limiting: 5 registrations per IP per hour
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function toE164(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('62')) {
+    return '+' + digits;
+  }
+  return '+62' + digits.replace(/^0+/, '');
+}
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + 3600000 });
+    return true;
+  }
+
+  if (entry.count >= 5) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
 
 const registerSchema = z.object({
   full_name: z.string().min(3).max(100),
-  phone: z.string().regex(/^(\+62|62|0)8[1-9][0-9]{6,11}$/, 'Format nomor HP Indonesia tidak valid'),
+  phone: z.string().regex(/^(\+62|62|0)8[1-9][0-9]{6,11}$/, 'Format nomor HP Indonesia tidak valid: gunakan 08xx, 628xx, atau +628xx'),
   password: z.string().min(8).max(100),
   role: z.enum(['kader', 'bidan', 'puskesmas']),
-  puskesmas_id: z.string().uuid(),
+  puskesmas_id: z.string().uuid().optional(),
   region: z.string().max(100).optional(),
 });
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit check
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak permintaan. Coba lagi dalam 1 jam.' },
+        { status: 429 }
+      );
+    }
+
     const body: unknown = await request.json();
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: `Validation failed: ${parsed.error.issues.map((i) => i.message).join('; ')}` },
+        { error: parsed.error.issues.map((i) => i.message).join('; ') },
         { status: 400 }
       );
     }
 
-    const { full_name, phone, password, role, puskesmas_id, region } = parsed.data;
+    const { full_name, password, role, region } = parsed.data;
+    const phone = toE164(parsed.data.phone);
     const supabase = createServiceClient();
+
+    // ─── Auto-assign puskesmas if not provided ───
+    let puskesmas_id = parsed.data.puskesmas_id;
+    if (!puskesmas_id) {
+      const { data: defaultPuskesmas } = await supabase
+        .from('puskesmas')
+        .select('id')
+        .limit(1)
+        .single();
+
+      if (!defaultPuskesmas) {
+        return NextResponse.json(
+          { error: 'Tidak ada puskesmas terdaftar. Hubungi administrator.' },
+          { status: 400 }
+        );
+      }
+      puskesmas_id = defaultPuskesmas.id;
+    }
 
     // ─── Check if phone already registered ───
     const { data: existing } = await supabase
@@ -69,6 +125,7 @@ export async function POST(request: NextRequest) {
       email: `${phone.replace(/\D/g, '')}@medisense.local`, // phone-based login
       phone,
       password,
+      email_confirm: true, // auto-confirm (email @medisense.local palsu, gak bisa kirim confirmation)
       user_metadata: {
         full_name,
         role,
@@ -104,15 +161,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ─── Sign in to get session token ───
+    const clientSupabase = createClientClient();
+    const signInEmail = `${phone.replace(/\D/g, '')}@medisense.local`;
+    const { data: signInData } = await clientSupabase.auth.signInWithPassword({
+      email: signInEmail,
+      password,
+    });
+
+    const token = signInData?.session?.access_token ?? '';
+
+    // Fetch puskesmas name for display
+    let puskesmasName: string | undefined;
+    if (puskesmas_id) {
+      const { data: puskesmasData } = await supabase
+        .from('puskesmas')
+        .select('name')
+        .eq('id', puskesmas_id)
+        .single();
+      puskesmasName = puskesmasData?.name ?? undefined;
+    }
+
     return NextResponse.json(
       {
         user: {
           id: authUser.user.id,
           full_name,
           role,
-          puskesmas_id,
+          puskesmas_id: puskesmas_id ?? null,
+          puskesmas_name: puskesmasName,
+          phone,
         },
-        token: '',
+        token,
       } satisfies API.AuthResponse,
       { status: 201 }
     );

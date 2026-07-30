@@ -28,6 +28,17 @@ const PERIODE_DAYS: Record<string, number> = {
 
 export async function GET(request: NextRequest) {
   try {
+    const userRole = request.headers.get('x-medisense-user-role');
+    const userId = request.headers.get('x-medisense-user-id');
+
+    if (!userRole || !userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!['bidan', 'puskesmas'].includes(userRole)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const query = querySchema.safeParse({
       puskesmas_id: searchParams.get('puskesmas_id'),
@@ -51,6 +62,18 @@ export async function GET(request: NextRequest) {
 
     if (puskesmas_id) {
       kaderFilterQuery = kaderFilterQuery.eq('puskesmas_id', puskesmas_id);
+    }
+
+    if (userRole === 'bidan' && !puskesmas_id) {
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('puskesmas_id')
+        .eq('id', userId)
+        .single();
+
+      if (userProfile?.puskesmas_id) {
+        kaderFilterQuery = kaderFilterQuery.eq('puskesmas_id', userProfile.puskesmas_id);
+      }
     }
 
     const { data: kaderIds } = await kaderFilterQuery;

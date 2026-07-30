@@ -26,6 +26,9 @@ const MODEL_URLS = [
 // ── INSTALL: Cache app shell + model ─────────────────
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
+  const CACHE_VERSION = 'medisense-v1-' + new Date().toISOString().split('T')[0];
+
   event.waitUntil(
     Promise.all([
       // Cache app shell
@@ -42,7 +45,6 @@ self.addEventListener('install', (event) => {
       }),
     ])
   );
-  self.skipWaiting();
 });
 
 // ── ACTIVATE: Clean old caches ────────────────────────
@@ -78,7 +80,7 @@ self.addEventListener('fetch', (event) => {
 
   // ── Cache-First untuk model AI ──
   if (url.pathname.startsWith('/models/')) {
-    event.respondWith(cacheFirst(request, CACHE_NAMES.MODEL));
+    event.respondWith(cacheFirstModel(request, CACHE_NAMES.MODEL));
     return;
   }
 
@@ -110,6 +112,29 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ── Cache Strategies ───────────────────────────────────
+
+// Special cache-first for model files with integrity check
+async function cacheFirstModel(request, cacheName) {
+  const cached = await caches.match(request);
+  if (cached) {
+    // Verify cached response has content
+    const contentLength = cached.headers.get('content-length');
+    if (contentLength && contentLength !== '0') {
+      return cached;
+    }
+  }
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    return new Response('Offline', { status: 503 });
+  }
+}
 
 async function cacheFirst(request, cacheName) {
   const cached = await caches.match(request);
@@ -148,3 +173,37 @@ async function networkFirstWithFallback(request, cacheName) {
     return new Response('Offline', { status: 503 });
   }
 }
+
+// ── BACKGROUND SYNC ────────────────────────────────────
+
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-triage') {
+    event.waitUntil(syncTriageData());
+  }
+});
+
+async function syncTriageData() {
+  try {
+    const clients = await self.clients.matchAll();
+    clients.forEach((client) => {
+      client.postMessage({ type: 'sync-triage' });
+    });
+    return true;
+  } catch (error) {
+    console.error('Background sync error:', error);
+    return false;
+  }
+}
+
+// ── MESSAGE HANDLER ────────────────────────────────────
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+
+  // Forward sync trigger to main thread
+  if (event.data?.type === 'TRIGGER_SYNC') {
+    syncTriageData();
+  }
+});

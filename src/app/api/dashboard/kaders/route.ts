@@ -18,6 +18,16 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
+    const userRole = request.headers.get('x-medisense-user-role');
+    const userId = request.headers.get('x-medisense-user-id');
+
+    if (!userRole || !userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (userRole === 'kader') {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const query = querySchema.safeParse({
       puskesmas_id: searchParams.get('puskesmas_id'),

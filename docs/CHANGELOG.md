@@ -7,77 +7,56 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
-## [0.1.0] — 2026-07-29
+## [0.6.0] — 2026-07-31
 
-### Added
-
-- **PRD (`docs/PRD.md`)** — Product Requirements Document final, 5 kondisi MVP dengan arsitektur scale-ready
-- **TECH-STACK (`docs/TECH-STACK.md`)** — Arsitektur 3 layer, stack decisions, API contract, struktur repo
-- **DESIGN (`docs/DESIGN.md`)** — Design system v2: warna triase (Hijau/Kuning/Merah), 6 wireframe ASCII, 25 brief ilustrasi SVG
-- **FIGMA-HANDOFF (`docs/FIGMA-HANDOFF.md`)** — Handoff desain untuk frontend
-- **VERSIONING (`docs/VERSIONING.md`)** — Semantic versioning + model versioning
-- **ML Model Card (`docs/ML-MODEL-CARD.md`)** — Arsitektur Dense NN, evaluasi, keterbatasan
-- **Status (`docs/STATUS.md`)** — Project tracker, milestone, log aktivitas
-
-### ML Pipeline
-
-- **Generate synthetic dataset** (`ml/scripts/generate_synthetic.py`) — 5000 samples (sepsis + pneumonia balita) dengan distribusi klinis realistis
-- **Training** — Dense NN (64→32→16) with batch norm, dropout, attention gating, 4579 params
-- **Model performance** — Sepsis AUC 0.938, Pneumonia AUC 0.96 on test set (synthetic data)
-- **Model formats:**
-  - TF.js GraphModel: `public/models/medisense_model_tfjs/` (29 KB)
-  - TF-Lite FP16: `ml/models/medisense_model_fp16.tflite` (17 KB)
-  - TF-Lite INT8: `ml/models/medisense_model_int8.tflite` (8.8 KB)
-  - Keras H5: `ml/models/medisense_model.h5` (531 KB)
-- **Preprocessing contract** (`ml/artifacts/preprocessing_contract.json`) — scaler params + feature order untuk JS parity
-- **ML Deployment Guide** (`docs/ML-DEPLOYMENT.md`) — kontrak preprocessing, loading, triage logic, voice analysis (Vosk.js recommendation)
-
-### Backend API
-
-- **Directory structure** — Next.js App Router with `src/app/api/` monorepo
-- **Middleware auth** (`src/middleware.ts`) — JWT Bearer validation, role-based access (kader/bidan/puskesmas)
-- **Sync endpoints:**
-  - `POST /api/sync/triage` — Sinkronisasi triase dari device ke cloud (Zod validation, upsert logic, device auto-registration)
-  - `GET /api/sync/pending` — Ambil pending updates (model version, sync queue)
-- **Dashboard endpoints:**
-  - `GET /api/dashboard/summary` — Agregasi tren penyakit, distribusi triase, early warning signal
-  - `GET /api/dashboard/kaders` — Daftar kader dan performa
-- **Auth endpoints:**
-  - `POST /api/auth/register` — Registrasi user (Supabase Auth + profile creation)
-  - `POST /api/auth/login` — Login via phone + password
-- **System endpoints:**
-  - `GET /api/health` — Health check with database connectivity
-  - `GET /api/models/latest` — Model version check (public)
-- **Database schema** (`supabase/migrations/00001_init.sql`) — PostgreSQL: puskesmas, villages, user_profiles, devices, triage_sessions, sync_queue, model_versions, RLS policies, views, early warning function
-- **TypeScript types** (`src/types/database.ts`) — Full type definitions for all tables + API request/response types
-- **Supabase client** (`src/lib/supabase.ts`) — Server (service role) + client (anon key) helpers
-- **TF.js Model loader** (`src/lib/medisense.ts`) — `MedisenseEngine` singleton: load, predict, warmup, dispose
-
-### Infrastructure
-
-- **Config files** — `package.json`, `tsconfig.json`, `next.config.ts`, `.env.example`, `.gitignore`
-- **CI** — `.github/workflows/ci.yml`
-
-## [0.2.0] — 2026-07-29
+### Fixed
+- **Double sync** (`src/components/triage/triage-wizard.tsx`) — Ubah `handleSync` dari direct `POST /api/sync/triage` menjadi panggil `syncManager.syncNow()`. Hilangkan duplikasi API call (Yjs periodic + manual).
+- **voice_text tidak terkirim via Yjs** (`src/lib/sync.ts`, `src/components/triage/triage-wizard.tsx`) — Tambah field `voice_text` ke `TriageSyncData` interface dan kirim dari `handleAnalysisComplete`.
+- **Riwayat tidak sync dari cloud** — Berbagai perbaikan:
+  - Endpoint baru `GET /api/sync/history` untuk ambil riwayat dari Supabase
+  - Action `fetchHistoryFromCloud` di `triage-store.ts` — fetch + dedup by timestamp
+  - PWA layout panggil setelah `loadHistory()` dan setelah sync-complete
+  - History page punya tombol Sync manual
+- **Tidak ada tombol Kembali ke Beranda** (`src/components/triage/step-result.tsx`) — Tambah link "Kembali ke Beranda" di bawah tombol "Triase Baru"
+- **/api/sync/history tidak terproteksi** (`src/middleware.ts`) — Tambah ke `PROTECTED_API_ROUTES`
 
 ### Changed
+- **Sync chain disederhanakan** — Semua sync API via `syncManager.syncNow()`, tidak ada direct fetch di komponen
+- **Sync langsung setelah analisis** — `handleAnalysisComplete` panggil `syncManager.syncNow()` segera setelah add ke Yjs
 
-- **Database migration executed** — `supabase/migrations/00001_init.sql` applied to Supabase Cloud project `jtkajnfafbzbvtyraydx`
-- **Seed data** — 1 puskesmas demo (`Puskesmas Medisense Demo`), 3 villages (`Desa Sehat`, `Desa Tangguh`, `Desa Mandiri`), 1 model version (`v1.0.0`)
-- **Connection note** — IPv6 direct connection unavailable; all DB operations via Management API (IPv4) or Supabase MCP with PAT
+## [0.5.0] — 2026-07-30
+
+### Fixed
+- **Sync/triage 400: conditions empty array** (`src/components/triage/triage-wizard.tsx`) — Tambah default condition `'tidak_ada'` saat `result.conditions` kosong (probabilitas model < 0.1 untuk kedua kondisi). Fix di dua tempat: Yjs sync (line 91) dan direct API sync (line 138).
+- **Middleware 401 Invalid token payload** (`src/middleware.ts`) — Baca `user_metadata.role` dari Supabase JWT (nested), bukan `user_role`.
+- **device_id validation 400** (`src/lib/sync.ts`) — `getDeviceId()` return UUID murni tanpa prefix `device-`, sesuai Zod schema `z.string().uuid()`.
+- **kader_id selalu 'unknown'** (`src/store/auth-store.ts`) — Panggil `syncManager.setKaderId(user.id)` di login() setelah autentikasi berhasil.
+
+### Changed
+- **Rantai sync penuh berfungsi** — Login → Middleware → Yjs local → API sync cloud. Semua link dari ujung ke ujung sekarang terhubung dan tervalidasi.
+
+## [0.4.0] — 2026-07-30
 
 ### Added
+- **Halaman Login** (`src/app/login/page.tsx`) — Form login dengan nomor telepon + password, validasi, error handling, loading state. Memanggil `POST /api/auth/login`.
+- **Halaman Register** (`src/app/register/page.tsx`) — Form registrasi dengan nama, telepon, role (kader/bidan/puskesmas), password + konfirmasi. Memanggil `POST /api/auth/register`. Success page dengan redirect otomatis.
+- **Integrasi Emergency Button** (`src/components/triage/step-result.tsx`) — Tombol 119 muncul di hasil triase level MERAH.
+- **Logout** (`src/app/(pwa)/profile/page.tsx`) — Tombol "Keluar" di halaman Profile untuk user yang sudah login. Redirect ke `/login`.
 
-- **PWA Manifest** (`public/manifest.json`) — Standalone display, portrait, SVG icons, theme_color `#1E3A5F`
-- **Service Worker** (`public/sw.js`) — Cache-first (app shell + model files), Network-first (API with offline fallback)
-- **Design System** (`src/app/globals.css`) — Tailwind v4 custom theme: triage colors (hijau/kuning/merah), UI tokens, pulse/fade/shimmer animations
+### Fixed
+- **Hydration Error** (`src/app/(pwa)/layout.tsx`) — `navigator.onLine` dipindahkan dari `useState` initializer ke `useEffect`. State default `true` untuk SSR, dikoreksi setelah mount.
+- **Consent Screen Auto-Scroll Warning** (`src/components/triage/consent-screen.tsx`) — Hapus `position: fixed` sepenuhnya. Ganti dengan page-level flex layout (`min-h-screen bg-surface`). Render sebagai halaman penuh, bukan overlay modal. Tidak ada lagi warning "Skipping auto-scroll behavior" dari Next.js.
+- **Register API 400** (`src/app/api/auth/register/route.ts`) — `puskesmas_id` dijadikan optional, auto-assign dari puskesmas pertama; nomor HP dinormalisasi ke E.164.
+- **Emergency Button routing** (`src/components/ui/emergency-button.tsx`) — Integrasi penuh dengan hasil triase merah.
 
-### Frontend Components
+## [0.3.0] — 2026-07-29
 
-- **Triage Store** (`src/store/triage-store.ts`) — Zustand state: 5-step wizard, patient/symptom/voice/result, sync status, history
-- **Auth Store** (`src/store/auth-store.ts`) — Zustand state: login, user, token management
-- **ProgressStepper** (`src/components/ui/progress-stepper.tsx`) — 5-step circular indicator (active/completed/upcoming)
-- **BottomNav** (`src/components/ui/bottom-nav.tsx`) — Fixed bottom nav: Beranda, Triase Baru (FAB), Riwayat, Profil
+### Added
+- **PWA Layout** (`src/app/(pwa)/layout.tsx`) — Bottom navigation (4 items: Home, Triase Baru FAB, History, Profile). Sync status bar (online/offline/syncing/synced/error). Auto-dismiss sync status after 5s. Responsive padding + safe area.
+
+### Components
+- **ProgressStepper** (`src/components/ui/progress-stepper.tsx`) — 5-step visual indicator (active/completed/upcoming circles + labels)
+- **BottomNav** (`src/components/ui/bottom-nav.tsx`) — Fixed bottom bar, max 4 items + center FAB, active state tracking
 - **EmergencyButton** (`src/components/ui/emergency-button.tsx`) — Tombol 119 one-tap (red, 2x size, pulse animation)
 - **Symptom Icons** (`src/components/triage/symptom-icons.tsx`) — 7 SVG illustrations (Demam, Batuk, Sesak, Kebingungan, Nyeri Dada, Diare, Kebiruan)
 - **StepPatient** — Grid profil anggota keluarga (Diri Sendiri, Anak, Ibu, Ayah + custom)

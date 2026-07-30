@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, ArrowRight, UserRound } from 'lucide-react';
+import { Plus, ArrowRight, Pencil, Trash2, X } from 'lucide-react';
 import ProgressStepper from '@/components/ui/progress-stepper';
 import { useTriageStore, DEFAULT_PATIENTS, type Patient } from '@/store/triage-store';
 
@@ -10,27 +10,90 @@ import { useTriageStore, DEFAULT_PATIENTS, type Patient } from '@/store/triage-s
 
 export default function StepPatient({ onNext }: { onNext: () => void }) {
   const { selectedPatient, selectPatient } = useTriageStore();
-  const [patients] = useState(DEFAULT_PATIENTS);
+  const [patients, setPatients] = useState(DEFAULT_PATIENTS);
   const [customName, setCustomName] = useState('');
+  const [customAge, setCustomAge] = useState('');
+  const [customGender, setCustomGender] = useState<0 | 1>(0);
   const [showCustom, setShowCustom] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // ── Select ──
 
   const handleSelect = (patient: Patient) => {
     selectPatient(patient);
   };
 
-  const handleAddCustom = () => {
-    if (!customName.trim()) return;
-    const newPatient: Patient = {
-      id: `custom-${Date.now()}`,
-      name: customName.trim(),
-      age: 30,
-      gender: 0,
-      avatar: '👤',
-      relation: 'Lainnya',
-    };
-    selectPatient(newPatient);
+  // ── Add mode ──
+
+  const openAddForm = () => {
+    setEditingPatient(null);
     setCustomName('');
+    setCustomAge('');
+    setCustomGender(0);
+    setShowCustom(true);
+  };
+
+  // ── Edit mode ──
+
+  const openEditForm = (patient: Patient) => {
+    setEditingPatient(patient);
+    setCustomName(patient.name);
+    setCustomAge(String(patient.age));
+    setCustomGender(patient.gender);
+    setShowCustom(true);
+  };
+
+  const cancelForm = () => {
     setShowCustom(false);
+    setEditingPatient(null);
+    setCustomName('');
+    setCustomAge('');
+    setCustomGender(0);
+  };
+
+  // ── Save (add or update) ──
+
+  const handleSavePatient = () => {
+    if (!customName.trim()) return;
+    const age = parseInt(customAge, 10);
+    if (isNaN(age) || age < 0 || age > 120) return;
+
+    if (editingPatient) {
+      // Update existing patient
+      const updated: Patient = {
+        ...editingPatient,
+        name: customName.trim(),
+        age,
+        gender: customGender,
+      };
+      setPatients((prev) => prev.map((p) => (p.id === editingPatient.id ? updated : p)));
+      selectPatient(updated);
+    } else {
+      // Add new patient
+      const newPatient: Patient = {
+        id: `custom-${Date.now()}`,
+        name: customName.trim(),
+        age,
+        gender: customGender,
+        avatar: '👤',
+        relation: 'Lainnya',
+      };
+      setPatients((prev) => [...prev, newPatient]);
+      selectPatient(newPatient);
+    }
+
+    cancelForm();
+  };
+
+  // ── Delete ──
+
+  const handleDeletePatient = (id: string) => {
+    setPatients((prev) => prev.filter((p) => p.id !== id));
+    if (selectedPatient?.id === id) {
+      selectPatient(null);
+    }
+    setDeleteConfirmId(null);
   };
 
   return (
@@ -50,12 +113,13 @@ export default function StepPatient({ onNext }: { onNext: () => void }) {
       <div className="grid grid-cols-3 gap-3 mb-6">
         {patients.map((p) => {
           const isSelected = selectedPatient?.id === p.id;
+
           return (
             <button
               key={p.id}
               onClick={() => handleSelect(p)}
               className={`
-                flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
+                relative flex flex-col items-center gap-2 p-4 pb-6 rounded-xl border-2 transition-all
                 ${isSelected
                   ? 'border-accent bg-accent-bg ring-2 ring-accent/20'
                   : 'border-border bg-surface hover:border-accent/50'
@@ -64,6 +128,18 @@ export default function StepPatient({ onNext }: { onNext: () => void }) {
               aria-pressed={isSelected}
               aria-label={`Pilih ${p.name}`}
             >
+              {/* Edit icon — semua pasien bisa diedit */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEditForm(p);
+                }}
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-border transition-colors"
+                aria-label={`Edit ${p.name}`}
+              >
+                <Pencil className="w-3 h-3 text-text-secondary" />
+              </button>
+
               <span className="text-3xl" role="img" aria-hidden="true">
                 {p.avatar}
               </span>
@@ -77,7 +153,7 @@ export default function StepPatient({ onNext }: { onNext: () => void }) {
 
         {/* Add custom patient */}
         <button
-          onClick={() => setShowCustom(true)}
+          onClick={openAddForm}
           className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-border bg-surface hover:border-accent/50 transition-all"
         >
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
@@ -88,30 +164,137 @@ export default function StepPatient({ onNext }: { onNext: () => void }) {
         </button>
       </div>
 
-      {/* Custom patient form */}
-      {showCustom && (
-        <div className="mb-6 p-4 rounded-xl border border-border bg-surface animate-fade-in">
-          <label className="block text-sm font-medium text-text-primary mb-2">
-            Nama Pasien
-          </label>
+      {/* Action buttons — Edit & Hapus untuk pasien terpilih */}
+      {selectedPatient && !showCustom && (
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => openEditForm(selectedPatient!)}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-border bg-surface text-text-primary font-medium hover:border-accent/50 transition-all"
+          >
+            <Pencil className="w-4 h-4" />
+            <span>Edit</span>
+          </button>
+          <button
+            onClick={() => setDeleteConfirmId(selectedPatient!.id)}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-red-200 bg-red-50 text-red-600 font-medium hover:bg-red-100 transition-all"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Hapus</span>
+          </button>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {deleteConfirmId && (
+        <div className="mb-6 p-4 rounded-xl border border-red-200 bg-red-50 animate-fade-in">
+          <p className="text-sm text-red-700 mb-3">
+            Hapus pasien ini dari daftar? Data triase tetap tersimpan di riwayat.
+          </p>
           <div className="flex gap-2">
+            <button
+              onClick={() => setDeleteConfirmId(null)}
+              className="flex-1 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm font-medium"
+            >
+              Batal
+            </button>
+            <button
+              onClick={() => handleDeletePatient(deleteConfirmId)}
+              className="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors"
+            >
+              Ya, Hapus
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Custom patient form (add / edit) */}
+      {showCustom && (
+        <div className="mb-6 p-4 rounded-xl border border-border bg-surface animate-fade-in space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-text-primary">
+              {editingPatient ? 'Edit Pasien' : 'Pasien Baru'}
+            </h3>
+            <button
+              onClick={cancelForm}
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-border transition-colors"
+              aria-label="Tutup"
+            >
+              <X className="w-4 h-4 text-text-secondary" />
+            </button>
+          </div>
+
+          {/* Nama */}
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1.5">
+              Nama Pasien
+            </label>
             <input
               type="text"
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
               placeholder="Masukkan nama..."
-              className="flex-1 px-4 py-2.5 rounded-lg border border-border text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
-              onKeyDown={(e) => e.key === 'Enter' && handleAddCustom()}
+              className="w-full px-4 py-2.5 rounded-lg border border-border text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
+              onKeyDown={(e) => e.key === 'Enter' && handleSavePatient()}
               autoFocus
             />
-            <button
-              onClick={handleAddCustom}
-              disabled={!customName.trim()}
-              className="px-4 py-2.5 bg-accent text-white rounded-lg font-medium disabled:opacity-50 hover:bg-accent/90 transition-colors"
-            >
-              Tambah
-            </button>
           </div>
+
+          {/* Usia */}
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1.5">
+              Usia (tahun)
+            </label>
+            <input
+              type="number"
+              value={customAge}
+              onChange={(e) => setCustomAge(e.target.value)}
+              placeholder="Contoh: 45"
+              min={0}
+              max={120}
+              className="w-full px-4 py-2.5 rounded-lg border border-border text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+
+          {/* Jenis Kelamin */}
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1.5">
+              Jenis Kelamin
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCustomGender(0)}
+                className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                  customGender === 0
+                    ? 'border-accent bg-accent-bg text-accent ring-2 ring-accent/20'
+                    : 'border-border bg-surface text-text-secondary hover:border-accent/50'
+                }`}
+              >
+                Perempuan
+              </button>
+              <button
+                type="button"
+                onClick={() => setCustomGender(1)}
+                className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                  customGender === 1
+                    ? 'border-accent bg-accent-bg text-accent ring-2 ring-accent/20'
+                    : 'border-border bg-surface text-text-secondary hover:border-accent/50'
+                }`}
+              >
+                Laki-laki
+              </button>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            onClick={handleSavePatient}
+            disabled={!customName.trim() || !customAge.trim() || isNaN(parseInt(customAge, 10)) || parseInt(customAge, 10) < 0 || parseInt(customAge, 10) > 120}
+            className="w-full py-2.5 bg-accent text-white rounded-lg font-medium disabled:opacity-50 hover:bg-accent/90 transition-colors"
+          >
+            {editingPatient ? 'Simpan' : 'Tambah'}
+          </button>
         </div>
       )}
 

@@ -151,15 +151,26 @@ export default function StepResult({ onRestart, onSync }: StepResultProps) {
         {/* ── Triase Baru ── */}
         <button
           onClick={onRestart}
-          className="w-full py-4 mb-4 rounded-xl border-2 border-white/40 text-white text-lg font-semibold hover:bg-white/10 active:scale-[0.98] transition-all touch-target"
+          className="w-full py-4 rounded-xl border-2 border-white/40 text-white text-lg font-semibold hover:bg-white/10 active:scale-[0.98] transition-all touch-target"
         >
           Triase Baru
         </button>
 
+        {/* ── Kembali ke Beranda ── */}
+        <a
+          href="/"
+          className="w-full block text-center py-3 mt-2 rounded-xl text-white/80 text-base font-medium hover:text-white hover:bg-white/5 active:scale-[0.98] transition-all touch-target"
+        >
+          Kembali ke Beranda
+        </a>
+
         {/* ── Disclaimer Medis ── */}
-        <p className="text-xs text-white/60 text-center leading-relaxed mb-4 max-w-xs">
-          Hasil ini adalah alat bantu, bukan diagnosis dokter. Segera konsultasi dengan tenaga kesehatan.
-        </p>
+        <div className="w-full px-4 py-3 bg-black/10 mt-2 mb-4">
+          <p className="text-white text-xs text-center leading-relaxed">
+            ⚕️ Hasil ini adalah alat bantu triase dini, bukan diagnosis dokter. 
+            Segera konsultasi dengan tenaga kesehatan profesional.
+          </p>
+        </div>
       </div>
     </div>
   );
