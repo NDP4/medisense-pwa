@@ -21,11 +21,17 @@ const LEVEL_LABELS: Record<string, string> = {
 
 export default function HistoryPage() {
   const { history, fetchHistoryFromCloud } = useTriageStore();
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch history from cloud on mount
   useEffect(() => {
-    fetchHistoryFromCloud();
+    const init = async () => {
+      setIsLoading(true);
+      await fetchHistoryFromCloud();
+      setIsLoading(false);
+    };
+    init();
   }, [fetchHistoryFromCloud]);
 
   const handleRefresh = async () => {
@@ -33,6 +39,31 @@ export default function HistoryPage() {
     await fetchHistoryFromCloud();
     setTimeout(() => setIsRefreshing(false), 500);
   };
+
+  // ── Skeleton ──
+  if (isLoading) {
+    return (
+      <div className="px-4 pt-6" role="status" aria-label="Memuat riwayat">
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-7 w-36 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-border animate-pulse">
+              <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-3/4 bg-gray-200 rounded" />
+                <div className="h-3 w-1/2 bg-gray-200 rounded" />
+              </div>
+              <div className="h-3 w-16 bg-gray-200 rounded shrink-0" />
+            </div>
+          ))}
+        </div>
+        <span className="sr-only">Memuat riwayat triase...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 pt-6">

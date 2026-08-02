@@ -6,6 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useTriageStore } from '@/store/triage-store';
 import { useAuthStore } from '@/store/auth-store';
 import { clearAllData } from '@/lib/db';
+import Modal from '@/components/ui/modal';
+
+// Update saat rilis baru — lihat package.json "version"
+const APP_VERSION = 'v0.2.0';
 
 /* ── Profile Page ─────────────────────────────────────── */
 /* DESIGN.md §7.1 — Profil dengan hak subjek data UU PDP    */
@@ -14,7 +18,7 @@ type SectionId = 'data-pengguna' | 'privasi' | 'tentang' | null;
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { history } = useTriageStore();
+  const { history, clearHistory } = useTriageStore();
   const { user, isLoggedIn, logout } = useAuthStore();
   const [exportStatus, setExportStatus] = useState<'idle' | 'exported' | 'error'>('idle');
   const [deleteStatus, setDeleteStatus] = useState<'idle' | 'deleting' | 'done'>('idle');
@@ -42,7 +46,7 @@ export default function ProfilePage() {
     try {
       const exportData = {
         exportedAt: new Date().toISOString(),
-        appVersion: 'v0.2.0',
+        appVersion: APP_VERSION,
         totalRecords: history.length,
         records: history,
       };
@@ -67,16 +71,16 @@ export default function ProfilePage() {
     setDeleteStatus('deleting');
     try {
       await clearAllData();
+      clearHistory();
       setDeleteStatus('done');
       setTimeout(() => {
         setShowDeleteModal(false);
         setDeleteStatus('idle');
-        window.location.reload();
       }, 1500);
     } catch {
       setDeleteStatus('idle');
     }
-  }, []);
+  }, [clearHistory]);
 
   // ── Logout ──
 
@@ -372,110 +376,113 @@ export default function ProfilePage() {
       {/* ── Modals ── */}
 
       {/* Login Prompt Modal */}
-      {showLoginPrompt && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-surface rounded-2xl p-6 max-w-sm w-full shadow-xl animate-fade-in">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Lock className="w-8 h-8 text-primary" strokeWidth={1.5} />
-              </div>
-              <h2 className="text-lg font-bold text-text-primary mb-2">
-                Login untuk Akses Profil Lengkap
-              </h2>
-              <p className="text-sm text-text-secondary mb-6 leading-relaxed">
-                Dengan login, Anda bisa menyinkronkan data ke cloud,
-                mengelola akun, dan mengakses fitur profil lengkap.
-                Data offline Anda tetap aman.
-              </p>
-              <button
-                onClick={() => router.push('/login')}
-                className="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors mb-3"
-              >
-                Login
-              </button>
-              <button
-                onClick={() => setShowLoginPrompt(false)}
-                className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-              >
-                Nanti
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        title="Login untuk Akses Profil Lengkap"
+      >
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <Lock className="w-8 h-8 text-primary" strokeWidth={1.5} />
         </div>
-      )}
+        <h2 id="modal-login-akses-profil-title" className="text-lg font-bold text-text-primary mb-2">
+          Login untuk Akses Profil Lengkap
+        </h2>
+        <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+          Dengan login, Anda bisa menyinkronkan data ke cloud,
+          mengelola akun, dan mengakses fitur profil lengkap.
+          Data offline Anda tetap aman.
+        </p>
+        <button
+          onClick={() => router.push('/login')}
+          className="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors mb-3"
+        >
+          Login
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowLoginPrompt(false)}
+          className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+        >
+          Nanti
+        </button>
+      </Modal>
 
       {/* Hapus Semua Data — Modal Konfirmasi */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-surface rounded-2xl p-6 max-w-sm w-full shadow-xl animate-fade-in">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
-                <Trash2 className="w-8 h-8 text-red-600" strokeWidth={1.5} />
-              </div>
-              <h2 className="text-lg font-bold text-text-primary mb-2">
-                Hapus Semua Data?
-              </h2>
-              <p className="text-sm text-text-secondary mb-6 leading-relaxed">
-                {deleteStatus === 'deleting'
-                  ? 'Menghapus data...'
-                  : deleteStatus === 'done'
-                  ? '✓ Semua data telah dihapus'
-                  : 'Data yang dihapus tidak dapat dikembalikan. Semua riwayat triase lokal akan hilang.'}
-              </p>
-
-              {deleteStatus === 'idle' && (
-                <div className="w-full space-y-3">
-                  <button
-                    onClick={handleDeleteAll}
-                    className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors"
-                  >
-                    Ya, Hapus Semua
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-                  >
-                    Batal
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+      <Modal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Hapus Semua Data"
+        destructive
+        requireExplicitClose
+      >
+        <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+          <Trash2 className="w-8 h-8 text-red-600" strokeWidth={1.5} />
         </div>
-      )}
+        <h2 id="modal-hapus-data-title" className="text-lg font-bold text-text-primary mb-2">
+          Hapus Semua Data?
+        </h2>
+        <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+          {deleteStatus === 'deleting'
+            ? 'Menghapus data...'
+            : deleteStatus === 'done'
+            ? '✓ Semua data telah dihapus'
+            : 'Data yang dihapus tidak dapat dikembalikan. Semua riwayat triase lokal akan hilang.'}
+        </p>
+
+        {deleteStatus === 'idle' && (
+          <div className="w-full space-y-3">
+            <button
+              type="button"
+              onClick={handleDeleteAll}
+              className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors"
+            >
+              Ya, Hapus Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(false)}
+              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Batal
+            </button>
+          </div>
+        )}
+      </Modal>
 
       {/* Logout — Modal Konfirmasi */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-surface rounded-2xl p-6 max-w-sm w-full shadow-xl animate-fade-in">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
-                <LogOut className="w-8 h-8 text-red-600" strokeWidth={1.5} />
-              </div>
-              <h2 className="text-lg font-bold text-text-primary mb-2">
-                Keluar Akun?
-              </h2>
-              <p className="text-sm text-text-secondary mb-6 leading-relaxed">
-                Anda akan logout dari akun. Data triase offline tetap tersimpan di perangkat.
-              </p>
-              <div className="w-full space-y-3">
-                <button
-                  onClick={handleLogout}
-                  className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors"
-                >
-                  Ya, Keluar
-                </button>
-                <button
-                  onClick={() => setShowLogoutModal(false)}
-                  className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-                >
-                  Batal
-                </button>
-              </div>
-            </div>
-          </div>
+      <Modal
+        open={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        title="Keluar Akun"
+        destructive
+        requireExplicitClose
+      >
+        <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+          <LogOut className="w-8 h-8 text-red-600" strokeWidth={1.5} />
         </div>
-      )}
+        <h2 id="modal-keluar-akun-title" className="text-lg font-bold text-text-primary mb-2">
+          Keluar Akun?
+        </h2>
+        <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+          Anda akan logout dari akun. Data triase offline tetap tersimpan di perangkat.
+        </p>
+        <div className="w-full space-y-3">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors"
+          >
+            Ya, Keluar
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowLogoutModal(false)}
+            className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+          >
+            Batal
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

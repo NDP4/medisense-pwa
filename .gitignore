@@ -55,3 +55,9 @@ next-env.d.ts
 # Dataset (semua data mentah, processed, backup)
 ml/data/
 dataset/
+
+latex-template/
+ci-templates/
+
+*.tsbuildinfo 
+.tsbuildinfo 

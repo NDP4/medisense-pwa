@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Phone, Lock, AlertCircle, Eye, EyeOff, ArrowLeft, Check, Building, Search, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
+import { normalizePhone } from '@/lib/utils';
 import type { Puskesmas } from '@/types/database';
 
 const ROLES = [
@@ -27,12 +28,20 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'success'>('form');
 
+  // Clean redirect setelah registrasi sukses (dengan timer cleanup)
+  useEffect(() => {
+    if (step !== 'success') return;
+    const timer = setTimeout(() => router.push('/'), 2000);
+    return () => clearTimeout(timer);
+  }, [step, router]);
+
   // ── Puskesmas state ──
   const [puskesmasList, setPuskesmasList] = useState<Pick<Puskesmas, 'id' | 'name' | 'address' | 'region'>[]>([]);
   const [selectedPuskesmas, setSelectedPuskesmas] = useState<Pick<Puskesmas, 'id' | 'name' | 'address' | 'region'> | null>(null);
   const [puskesmasSearch, setPuskesmasSearch] = useState('');
   const [showPuskesmasDropdown, setShowPuskesmasDropdown] = useState(false);
   const [puskesmasLoading, setPuskesmasLoading] = useState(false);
+  const [puskesmasFetchError, setPuskesmasFetchError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // ── Fetch puskesmas list saat komponen mount ──
@@ -40,14 +49,19 @@ export default function RegisterPage() {
     let cancelled = false;
     const fetchPuskesmas = async () => {
       setPuskesmasLoading(true);
+      setPuskesmasFetchError(false);
       try {
         const res = await fetch('/api/puskesmas/list');
         const data = await res.json();
-        if (!cancelled && data.puskesmas) {
-          setPuskesmasList(data.puskesmas);
+        if (!cancelled) {
+          if (data.puskesmas) {
+            setPuskesmasList(data.puskesmas);
+          } else {
+            setPuskesmasFetchError(true);
+          }
         }
       } catch {
-        // Silent fail — akan muncul error waktu submit
+        if (!cancelled) setPuskesmasFetchError(true);
       } finally {
         if (!cancelled) setPuskesmasLoading(false);
       }
@@ -127,7 +141,7 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           full_name: fullName.trim(),
-          phone: '+' + phone.trim(),
+          phone: normalizePhone(phone),
           password,
           role,
           puskesmas_id: selectedPuskesmas.id,
@@ -147,9 +161,6 @@ export default function RegisterPage() {
           phone: data.user.phone ?? '',
         }, data.token);
         setStep('success');
-        setTimeout(() => {
-          router.push('/');
-        }, 2000);
       } else {
         setError(data.error || 'Registrasi gagal. Coba lagi.');
       }
@@ -244,15 +255,17 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">
+          <fieldset>
+            <legend className="block text-sm font-medium text-text-primary mb-2">
               Peran / Jabatan
-            </label>
-            <div className="grid grid-cols-3 gap-2">
+            </legend>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Pilih peran Anda">
               {ROLES.map((r) => (
                 <button
                   key={r.value}
                   type="button"
+                  role="radio"
+                  aria-checked={role === r.value}
                   onClick={() => setRole(r.value)}
                   className={`py-2.5 px-3 rounded-lg text-sm font-medium border transition-all ${
                     role === r.value
@@ -264,15 +277,16 @@ export default function RegisterPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           {/* ── Searchable Puskesmas Selector ── */}
           <div ref={dropdownRef} className="relative">
-            <label className="block text-sm font-medium text-text-primary mb-1">
+            <p id="puskesmas-label" className="block text-sm font-medium text-text-primary mb-1">
               Puskesmas <span className="text-red-500">*</span>
-            </label>
+            </p>
             <button
               type="button"
+              aria-labelledby="puskesmas-label"
               onClick={() => setShowPuskesmasDropdown(!showPuskesmasDropdown)}
               className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
                 selectedPuskesmas
@@ -309,6 +323,7 @@ export default function RegisterPage() {
                     value={puskesmasSearch}
                     onChange={(e) => setPuskesmasSearch(e.target.value)}
                     placeholder="Cari puskesmas..."
+                    aria-label="Cari puskesmas berdasarkan nama atau wilayah"
                     className="w-full pl-9 pr-3 py-2 rounded-lg bg-muted text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/20 border border-transparent focus:border-accent"
                     autoFocus
                   />
@@ -316,7 +331,11 @@ export default function RegisterPage() {
 
                 {/* List */}
                 <div className="max-h-48 overflow-y-auto">
-                  {filteredPuskesmas.length === 0 ? (
+                  {puskesmasFetchError ? (
+                    <div className="p-4 text-center text-sm text-red-600">
+                      Gagal memuat daftar puskesmas. Periksa koneksi dan coba lagi.
+                    </div>
+                  ) : filteredPuskesmas.length === 0 ? (
                     <div className="p-4 text-center text-sm text-text-secondary">
                       {puskesmasSearch ? 'Puskesmas tidak ditemukan' : 'Tidak ada puskesmas tersedia'}
                     </div>

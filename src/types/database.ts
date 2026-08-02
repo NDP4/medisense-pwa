@@ -116,6 +116,21 @@ export namespace API {
     model_version: string;
   }
 
+  // GET /api/trend/global
+  export interface TrendGlobalRequest {
+    periode: '7d' | '30d' | 'all';
+  }
+
+  export interface TrendGlobalResponse {
+    total_triages: number;
+    triage_by_level: { hijau: number; kuning: number; merah: number };
+    conditions_breakdown: Record<string, number>;
+    daily_trend: Array<{ date: string; total: number; merah: number; kuning: number; hijau: number }>;
+    puskesmas_summary: Array<{ id: string; name: string; total: number; region: string }>;
+    active_kaders: number;
+    unique_patients: number;
+  }
+
   // GET /api/dashboard/summary
   export interface DashboardSummaryRequest {
     puskesmas_id?: string;

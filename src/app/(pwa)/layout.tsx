@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import BottomNav from '@/components/ui/bottom-nav';
+import ErrorBoundary from '@/components/ui/error-boundary';
+import Onboarding from '@/components/ui/onboarding';
 import { usePathname } from 'next/navigation';
 import { syncManager } from '@/lib/sync';
 import { useTriageStore } from '@/store/triage-store';
@@ -16,6 +18,20 @@ export default function PWALayout({ children }: { children: React.ReactNode }) {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
   const [isOnline, setIsOnline] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Cek onboarding pada mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const done = localStorage.getItem('medisense_onboarding_done');
+      if (!done) setShowOnboarding(true);
+    }
+  }, []);
+
+  const handleOnboardingComplete = useCallback(() => {
+    localStorage.setItem('medisense_onboarding_done', 'true');
+    setShowOnboarding(false);
+  }, []);
 
   useEffect(() => {
     syncManager.initialize().then(() => setIsInitialized(true));
@@ -61,6 +77,9 @@ export default function PWALayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-muted max-w-lg mx-auto relative">
+      {/* Onboarding overlay (first visit) */}
+      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
+
       {/* Sync status bar */}
       <div className="sticky top-0 z-30">
         {syncStatus === 'syncing' && (
@@ -92,9 +111,11 @@ export default function PWALayout({ children }: { children: React.ReactNode }) {
         )}
       </div>
 
-      {/* Main content area */}
-      <main className={`pb-4 ${!isTriageResult ? 'pb-20' : ''}`}>
-        {children}
+      {/* Main content area — transisi smooth antar halaman */}
+      <main className={`pb-4 ${!isTriageResult ? 'pb-20' : ''} animate-fade-in`}>
+        <ErrorBoundary fallbackTitle="Gagal Memuat Halaman" fallbackMessage="Terjadi kesalahan saat memuat halaman ini. Silakan coba lagi.">
+          {children}
+        </ErrorBoundary>
       </main>
 
       {/* Bottom Navigation */}

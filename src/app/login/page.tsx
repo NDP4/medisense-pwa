@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Phone, Lock, AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
+import { normalizePhone } from '@/lib/utils';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.trim(), password }),
+        body: JSON.stringify({ phone: normalizePhone(phone), password }),
       });
 
       const data = await res.json();
@@ -146,8 +147,8 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>

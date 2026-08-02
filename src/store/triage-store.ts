@@ -108,6 +108,7 @@ interface TriageState {
   setSyncStatus: (status: SyncStatus, error?: string) => void;
 
   resetTriage: () => void;
+  clearHistory: () => void;
   addToHistory: (result: TriageResult) => void;
   loadHistory: () => Promise<void>;
   fetchHistoryFromCloud: () => Promise<void>;
@@ -305,6 +306,7 @@ export const useTriageStore = create<TriageState>((set, get) => ({
   },
 
   // ── History ──
+  clearHistory: () => set({ history: [] }),
   addToHistory: (result) => {
     const history = [result, ...get().history].slice(0, 50);
     set({ history });

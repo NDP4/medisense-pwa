@@ -13,6 +13,7 @@ const PROTECTED_API_ROUTES: Record<string, UserRole[]> = {
   '/api/sync/history': ['kader', 'bidan', 'puskesmas'],
   '/api/dashboard/summary': ['bidan', 'puskesmas'],
   '/api/dashboard/kaders': ['puskesmas'],
+  '/api/trend/global': ['kader', 'bidan', 'puskesmas'],
 };
 
 const PUBLIC_ROUTES = [

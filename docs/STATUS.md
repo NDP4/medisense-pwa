@@ -3,13 +3,15 @@
 **Tier:** Corex Growth
 **PRD Terakhir:** 29 Juli 2026
 **Milestone Aktif:** M6 — Pilot Lapangan
-**Build:** ✅ npm run build — 0 errors, 18 routes (voice double, hydration, add patient, silent sync, age & gender, login prompt, profile overhaul)
+**Build:** ✅ npm run build — 0 errors, 21 routes
 
-## QA Status (30 Jul 2026)
-**57/57 PASS (100%) — Semua 7 temuan telah diperbaiki ✅**
-- 2 MEDIUM: Silent sync failure + Audit trail persistence ✅
-- 3 LOW: Patient hash, Profile hardcoded, Voice auto-stop ✅
-- 2 INFO: Model 2 output, Node.js warning (ditunda M6) ⏳
+## QA Status (31 Jul 2026)
+**Semua 14 temuan ✅ FIXED — build 0 errors, 19 routes**
+- ✅ **2 HIGH** — Modal focus trap + aksesibilitas → dibuat `src/components/ui/modal.tsx` dengan focus trapping, role dialog, aria-modal, Escape/backdrop close, body scroll lock, focus return
+- ✅ **4 MEDIUM** — A11y register (fieldset/radiogroup, aria-labelledby, search aria-label) + login (password toggle tabIndex & aria-label) + ErrorBoundary di PWA layout + skeleton loading di history
+- ✅ **3 LOW** — Redirect cleanup (useEffect cleanup), no-reload reset (clearHistory), type button
+- ✅ **4 INFO** — Fetch error feedback puskesmas, normalizePhone utility, clearHistory ganti reload, APP_VERSION constant
+- ⏳ Model 2 output, Node.js warning (ditunda M6)
 
 ## Critical Fixes (30 Jul 2026)
 - ✅ **Halaman Login & Register** — Dibuat (`src/app/login/page.tsx`, `src/app/register/page.tsx`)
@@ -169,6 +171,25 @@
 | 31 Jul 2026 | corex-frontend | **Double sync fix + voice_text + Cloud History API + Kembali ke Beranda ✅** |
 | 31 Jul 2026 | corex-frontend | **Profile data mapping fix: API snake_case → store camelCase + phone & puskesmas_name di response + puskesmasName display ✅** |
 | 31 Jul 2026 | corex-frontend | **Endpoint /api/puskesmas/list + searchable puskesmas selector di register page ✅** |
+| 31 Jul 2026 | corex-qa | **QA audit kode & aksesibilitas — 14 temuan (2 HIGH, 4 MEDIUM, 3 LOW, 4 INFO) ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: Modal focus trap (src/components/ui/modal.tsx) ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: Refactor profile 3 modals ke Modal component ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: type=\"button\" ke semua non-submit buttons ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: APP_VERSION constant ganti hardcoded string ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: clearHistory action + window.location.reload() → store reset ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: Register a11y (fieldset/radiogroup, aria-labelledby, aria-label search) ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: Login password toggle a11y (tabIndex removed, aria-label added) ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: Register redirect timer → useEffect cleanup ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: Error feedback puskesmas fetch failure ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: ErrorBoundary component (src/components/ui/error-boundary.tsx) ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: Skeleton loading di history page ✅** |
+| 31 Jul 2026 | corex-frontend | **QA fix: normalizePhone utility + dipakai di login & register ✅** |
+| 31 Jul 2026 | corex-frontend | **Fitur: Onboarding 5 layar untuk kader baru (src/components/ui/onboarding.tsx) ✅** |
+| 31 Jul 2026 | corex-frontend | **Fix: Onboarding layout disesuaikan untuk PWA (compact, mobile-first, tidak overflow) ✅** |
+| 31 Jul 2026 | corex-frontend | **Fitur: Halaman Trend / Statistik global (src/app/(pwa)/trend/page.tsx) — agregasi data seluruh puskesmas dari API ✅** |
+| 31 Jul 2026 | corex-frontend | **Update: BottomNav 5 item — Home, Trend, +Triase (FAB tengah), History, Profile ✅** |
+| 31 Jul 2026 | corex-backend | **Endpoint baru /api/trend/global — agregasi global seluruh puskesmas ✅** |
+| 31 Jul 2026 | corex-frontend | **Fix: Onboarding PWA — ukuran ikon/padding dikecilkan, tidak overflow ✅** |
 
 ## Backend Status
 ### API Routes (✅ All implemented)
@@ -182,6 +203,7 @@
 | `/api/auth/register` | POST | Public | `src/app/api/auth/register/route.ts` |
 | `/api/auth/login` | POST | Public | `src/app/api/auth/login/route.ts` |
 | `/api/models/latest` | GET | Public | `src/app/api/models/latest/route.ts` |
+| `/api/trend/global` | GET | JWT (kader/bidan/puskesmas) | `src/app/api/trend/global/route.ts` |
 | `/api/puskesmas/list` | GET | Public | `src/app/api/puskesmas/list/route.ts` |
 | `/api/health` | GET | Public | `src/app/api/health/route.ts` |
 
@@ -206,6 +228,7 @@
 | Theme System | `src/app/globals.css` | ✅ |
 | PWA Layout | `src/app/(pwa)/layout.tsx` | ✅ Sync status bar |
 | Home / Dashboard | `src/app/(pwa)/page.tsx` | ✅ |
+| Trend / Statistik | `src/app/(pwa)/trend/page.tsx` | ✅ **NEW** — agregasi + grafik interaktif |
 | Triage Wizard | `src/app/(pwa)/triage/page.tsx` | ✅ Consent screen |
 | Step 1: Pasien | `src/components/triage/step-patient.tsx` | ✅ |
 | Step 2: Gejala | `src/components/triage/step-symptoms.tsx` | ✅ |
@@ -234,7 +257,7 @@
 - ✅ Cache-Control: immutable untuk model files
 
 ### Build
-- **npm run build** ✅ (0 errors, 18 routes)
+- **npm run build** ✅ (0 errors, 21 routes)
 - **First Load JS shared:** 103 kB
 - **Middleware:** ~42 kB (includes jose for JWT verification)
 
