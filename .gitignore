@@ -60,4 +60,4 @@ latex-template/
 ci-templates/
 
 *.tsbuildinfo 
-.tsbuildinfo 
+.tsbuildinfo *.tsbuildinfo
