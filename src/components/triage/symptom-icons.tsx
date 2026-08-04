@@ -160,8 +160,6 @@ export function IconKebiruan({ size, className }: IconProps) {
       <circle cx="62" cy="26" r="5" fill="#60A5FA" opacity="0.4" />
       <circle cx="78" cy="23" r="5" fill="#60A5FA" opacity="0.4" />
       <circle cx="92" cy="28" r="5" fill="#60A5FA" opacity="0.4" />
-      {/* Warning label */}
-      <text x="55" y="115" fontSize="10" textAnchor="middle" fill="#4B5563" fontFamily="sans-serif">Kebiruan</text>
     </SvgWrap>
   );
 }

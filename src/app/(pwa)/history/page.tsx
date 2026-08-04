@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ClipboardList, RefreshCw } from 'lucide-react';
 import { useTriageStore } from '@/store/triage-store';
+import { useT, translateCondition, translateRecommendations, localeOf } from '@/lib/i18n/use-t';
 
 /* ── History Page ─────────────────────────────────────── */
 /* DESIGN.md §9.2 — Empty state: clipboard kosong          */
@@ -13,13 +14,8 @@ const LEVEL_STYLES: Record<string, { border: string; bg: string; dot: string; te
   merah: { border: '#DC2626', bg: '#FEE2E2', dot: '#DC2626', text: '#991B1B' },
 };
 
-const LEVEL_LABELS: Record<string, string> = {
-  hijau: 'Aman',
-  kuning: 'Waspada',
-  merah: 'Darurat',
-};
-
 export default function HistoryPage() {
+  const { t, lang } = useT();
   const { history, fetchHistoryFromCloud } = useTriageStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -43,7 +39,7 @@ export default function HistoryPage() {
   // ── Skeleton ──
   if (isLoading) {
     return (
-      <div className="px-4 pt-6" role="status" aria-label="Memuat riwayat">
+      <div className="px-4 pt-6" role="status" aria-label={t('history.ariaLoading')}>
         <div className="flex items-center justify-between mb-6">
           <div className="h-7 w-36 bg-gray-200 rounded-lg animate-pulse" />
           <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
@@ -60,7 +56,7 @@ export default function HistoryPage() {
             </div>
           ))}
         </div>
-        <span className="sr-only">Memuat riwayat triase...</span>
+        <span className="sr-only">{t('history.srLoading')}</span>
       </div>
     );
   }
@@ -69,7 +65,7 @@ export default function HistoryPage() {
     <div className="px-4 pt-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-text-primary">
-          Riwayat Triase
+          {t('history.title')}
         </h1>
         <button
           onClick={handleRefresh}
@@ -77,7 +73,7 @@ export default function HistoryPage() {
           className="flex items-center gap-1.5 text-sm text-accent font-medium hover:underline disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span>Sync</span>
+          <span>{t('history.syncBtn')}</span>
         </button>
       </div>
 
@@ -85,17 +81,17 @@ export default function HistoryPage() {
         <div className="flex flex-col items-center justify-center min-h-[50vh]">
           <ClipboardList className="w-16 h-16 text-text-secondary/40 mb-4" strokeWidth={1.5} />
           <p className="text-base font-medium text-text-primary mb-1">
-            Belum ada sesi triase
+            {t('history.emptyTitle')}
           </p>
           <p className="text-sm text-text-secondary text-center max-w-xs">
-            Mulai triase baru sekarang! Data akan tersimpan otomatis di perangkat Anda.
+            {t('history.emptyBody')}
           </p>
         </div>
       ) : (
         <div className="space-y-3">
           {[...history].reverse().map((item, idx) => {
             const style = LEVEL_STYLES[item.triageLevel] ?? LEVEL_STYLES.hijau;
-            const timeStr = new Date(item.timestamp).toLocaleDateString('id-ID', {
+            const timeStr = new Date(item.timestamp).toLocaleDateString(localeOf(lang), {
               weekday: 'short',
               day: 'numeric',
               month: 'short',
@@ -117,18 +113,18 @@ export default function HistoryPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-semibold text-text-primary">
-                      {item.conditions.map(c => c.label).join(', ') || 'Pemeriksaan'}
+                      {item.conditions.map(c => translateCondition(t, c.condition)).join(', ') || t('history.checkup')}
                     </p>
                     <span
                       className="text-xs font-semibold px-2 py-0.5 rounded-full"
                       style={{ backgroundColor: style.bg, color: style.text }}
                     >
-                      {LEVEL_LABELS[item.triageLevel] ?? item.triageLevel}
+                      {t(`levels.${item.triageLevel}`) || item.triageLevel}
                     </span>
                   </div>
                   <p className="text-xs text-text-secondary">{timeStr}</p>
                   <ul className="mt-2 space-y-1">
-                    {item.recommendations.slice(0, 2).map((rec, ridx) => (
+                    {translateRecommendations(t, item.recommendations).slice(0, 2).map((rec, ridx) => (
                       <li key={ridx} className="text-xs text-text-secondary flex items-start gap-1.5">
                         <span className="mt-0.5">•</span>
                         <span>{rec}</span>

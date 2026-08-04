@@ -6,17 +6,19 @@ import Link from 'next/link';
 import { User, Phone, Lock, AlertCircle, Eye, EyeOff, ArrowLeft, Check, Building, Search, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { normalizePhone } from '@/lib/utils';
+import { useT, translateErrorMessage } from '@/lib/i18n/use-t';
 import type { Puskesmas } from '@/types/database';
 
 const ROLES = [
-  { value: 'kader', label: 'Kader Kesehatan' },
-  { value: 'bidan', label: 'Bidan Desa' },
-  { value: 'puskesmas', label: 'Petugas Puskesmas' },
+  { value: 'kader', labelKey: 'auth.roleKader' },
+  { value: 'bidan', labelKey: 'auth.roleBidan' },
+  { value: 'puskesmas', labelKey: 'auth.rolePuskesmas' },
 ] as const;
 
 export default function RegisterPage() {
   const router = useRouter();
   const { login } = useAuthStore();
+  const { t } = useT();
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -28,7 +30,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'success'>('form');
 
-  // Clean redirect setelah registrasi sukses (dengan timer cleanup)
+  // Redirect setelah registrasi sukses (timer dengan cleanup)
   useEffect(() => {
     if (step !== 'success') return;
     const timer = setTimeout(() => router.push('/'), 2000);
@@ -169,7 +171,7 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
-  }, [fullName, phone, password, confirmPassword, role, selectedPuskesmas, login, router]);
+  }, [fullName, phone, password, confirmPassword, role, selectedPuskesmas, login]);
 
   if (step === 'success') {
     return (
@@ -177,9 +179,9 @@ export default function RegisterPage() {
         <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
           <Check className="w-8 h-8 text-green-600" />
         </div>
-        <h1 className="text-xl font-bold text-text-primary mb-2">Registrasi Berhasil!</h1>
+        <h1 className="text-xl font-bold text-text-primary mb-2">{t('auth.successTitle')}</h1>
         <p className="text-sm text-text-secondary text-center">
-          Akun Anda telah dibuat. Mengalihkan ke halaman utama...
+          {t('auth.successBody')}
         </p>
       </div>
     );
@@ -193,29 +195,29 @@ export default function RegisterPage() {
           className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm">Kembali</span>
+          <span className="text-sm">{t('auth.back')}</span>
         </button>
       </div>
 
       <div className="flex-1 flex flex-col px-6 py-8 max-w-sm mx-auto w-full overflow-y-auto">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-text-primary">Daftar Akun Baru</h1>
+          <h1 className="text-2xl font-bold text-text-primary">{t('auth.regTitle')}</h1>
           <p className="text-sm text-text-secondary mt-1">
-            Daftar sebagai kader, bidan, atau petugas puskesmas
+            {t('auth.regSub')}
           </p>
         </div>
 
         {error && (
           <div className="flex items-start gap-2 p-3 mb-4 rounded-lg bg-red-50 border border-red-200">
             <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700">{translateErrorMessage(t, error)}</p>
           </div>
         )}
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label htmlFor="fullName" className="block text-sm font-medium text-text-primary mb-1">
-              Nama Lengkap
+              {t('auth.nameLabel')}
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
@@ -224,7 +226,7 @@ export default function RegisterPage() {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nama sesuai KTP"
+                placeholder={t('auth.namePlaceholder')}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-surface text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all text-base"
                 autoComplete="name"
               />
@@ -233,11 +235,11 @@ export default function RegisterPage() {
 
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-text-primary mb-1">
-              Nomor Telepon
+              {t('auth.phoneLabel')}
             </label>
             {phone && (
               <p className="text-xs text-text-secondary mb-1">
-                Format: +{phone}
+                {t('auth.formatPrefix', { phone })}
               </p>
             )}
             <div className="relative">
@@ -247,7 +249,7 @@ export default function RegisterPage() {
                 type="tel"
                 value={phone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
-                placeholder="Contoh: 08123456789"
+                placeholder={t('auth.phonePlaceholder')}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-surface text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all text-base"
                 inputMode="numeric"
                 autoComplete="tel"
@@ -257,9 +259,9 @@ export default function RegisterPage() {
 
           <fieldset>
             <legend className="block text-sm font-medium text-text-primary mb-2">
-              Peran / Jabatan
+              {t('auth.roleLegend')}
             </legend>
-            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Pilih peran Anda">
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t('auth.roleAria')}>
               {ROLES.map((r) => (
                 <button
                   key={r.value}
@@ -273,7 +275,7 @@ export default function RegisterPage() {
                       : 'bg-surface border-border text-text-secondary hover:border-accent/50'
                   }`}
                 >
-                  {r.label}
+                  {t(r.labelKey)}
                 </button>
               ))}
             </div>
@@ -282,7 +284,7 @@ export default function RegisterPage() {
           {/* ── Searchable Puskesmas Selector ── */}
           <div ref={dropdownRef} className="relative">
             <p id="puskesmas-label" className="block text-sm font-medium text-text-primary mb-1">
-              Puskesmas <span className="text-red-500">*</span>
+              {t('auth.puskesmasLabel')} <span className="text-red-500">*</span>
             </p>
             <button
               type="button"
@@ -305,7 +307,7 @@ export default function RegisterPage() {
                   </>
                 ) : (
                   <p className="text-sm text-text-secondary">
-                    {puskesmasLoading ? 'Memuat daftar puskesmas...' : 'Ketuk untuk pilih puskesmas'}
+                    {puskesmasLoading ? t('auth.puskesmasLoading') : t('auth.puskesmasTap')}
                   </p>
                 )}
               </div>
@@ -322,8 +324,8 @@ export default function RegisterPage() {
                     type="text"
                     value={puskesmasSearch}
                     onChange={(e) => setPuskesmasSearch(e.target.value)}
-                    placeholder="Cari puskesmas..."
-                    aria-label="Cari puskesmas berdasarkan nama atau wilayah"
+                    placeholder={t('auth.searchPlaceholder')}
+                    aria-label={t('auth.searchAria')}
                     className="w-full pl-9 pr-3 py-2 rounded-lg bg-muted text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/20 border border-transparent focus:border-accent"
                     autoFocus
                   />
@@ -333,11 +335,11 @@ export default function RegisterPage() {
                 <div className="max-h-48 overflow-y-auto">
                   {puskesmasFetchError ? (
                     <div className="p-4 text-center text-sm text-red-600">
-                      Gagal memuat daftar puskesmas. Periksa koneksi dan coba lagi.
+                      {t('auth.puskesmasErr')}
                     </div>
                   ) : filteredPuskesmas.length === 0 ? (
                     <div className="p-4 text-center text-sm text-text-secondary">
-                      {puskesmasSearch ? 'Puskesmas tidak ditemukan' : 'Tidak ada puskesmas tersedia'}
+                      {puskesmasSearch ? t('auth.puskesmasNotFound') : t('auth.puskesmasEmpty')}
                     </div>
                   ) : (
                     filteredPuskesmas.map((p) => {
@@ -376,7 +378,7 @@ export default function RegisterPage() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-text-primary mb-1">
-              Password
+              {t('auth.passwordLabel')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
@@ -385,7 +387,7 @@ export default function RegisterPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimal 8 karakter"
+                placeholder={t('auth.passPlaceholder')}
                 className="w-full pl-10 pr-12 py-3 rounded-lg border border-border bg-surface text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all text-base"
                 autoComplete="new-password"
               />
@@ -394,6 +396,7 @@ export default function RegisterPage() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
                 tabIndex={-1}
+                aria-label={showPassword ? t('auth.hidePass') : t('auth.showPass')}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -402,7 +405,7 @@ export default function RegisterPage() {
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-primary mb-1">
-              Konfirmasi Password
+              {t('auth.confirmLabel')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
@@ -411,7 +414,7 @@ export default function RegisterPage() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ulangi password"
+                placeholder={t('auth.confirmPlaceholder')}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-surface text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all text-base"
                 autoComplete="new-password"
               />
@@ -429,14 +432,14 @@ export default function RegisterPage() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             )}
-            {loading ? 'Memproses...' : 'Daftar'}
+            {loading ? t('auth.regLoading') : t('auth.regBtn')}
           </button>
         </form>
 
         <p className="text-center text-sm text-text-secondary mt-6 mb-8">
-          Sudah punya akun?{' '}
+          {t('auth.hasAccount')}{' '}
           <Link href="/login" className="text-accent font-medium hover:underline">
-            Masuk di sini
+            {t('auth.loginHere')}
           </Link>
         </p>
       </div>

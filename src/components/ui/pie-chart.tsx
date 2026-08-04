@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useT } from '@/lib/i18n/use-t';
 
 /* ── Interactive SVG Pie Chart ─────────────────────────── */
 /* Pure SVG arcs — zero dependencies, animasi draw + hover  */
@@ -61,6 +62,7 @@ export default function PieChart({
   innerRadius = 60,
   animated = true,
 }: PieChartProps) {
+  const { t } = useT();
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
@@ -106,7 +108,7 @@ export default function PieChart({
   if (total === 0 || arcs.length === 0) {
     return (
       <div className="flex items-center justify-center" style={{ width: size, height: size }}>
-        <span className="text-xs text-text-secondary">Tidak ada data</span>
+        <span className="text-xs text-text-secondary">{t('chart.noData')}</span>
       </div>
     );
   }
@@ -119,7 +121,7 @@ export default function PieChart({
         viewBox={`0 0 ${size} ${size}`}
         className="overflow-visible"
         role="img"
-        aria-label="Diagram pie distribusi triase"
+        aria-label={t('chart.aria')}
       >
         {/* Definisi untuk animasi */}
         <style>{`
@@ -227,7 +229,7 @@ export default function PieChart({
           fill="#6B7280"
           style={{ fontFamily: 'var(--font-inter), sans-serif' }}
         >
-          Total
+          {t('chart.total')}
         </text>
       </svg>
 

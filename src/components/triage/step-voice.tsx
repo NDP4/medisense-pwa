@@ -5,6 +5,7 @@ import { Mic, SkipForward, ChevronDown, Check, Loader2, AlertCircle, Download } 
 import ProgressStepper from '@/components/ui/progress-stepper';
 import { useTriageStore } from '@/store/triage-store';
 import voiceService from '@/lib/voice';
+import { useT, translateErrorMessage } from '@/lib/i18n/use-t';
 
 /* ── Step 3/5 — Input Suara (Vosk.js + Web Speech API) ─ */
 /* DESAIN: DESIGN.md §7.4 — Tombol mic besar + transkripsi  */
@@ -12,12 +13,13 @@ import voiceService from '@/lib/voice';
 /* ONLINE: Web Speech API (real-time, akurasi lebih tinggi)  */
 
 const LANGUAGES = [
-  { code: 'id', label: 'Indonesia', speechLang: 'id-ID' },
-  { code: 'jv', label: 'Jawa', speechLang: 'jv-ID' },
-  { code: 'su', label: 'Sunda', speechLang: 'su-ID' },
+  { code: 'id', labelKey: 'voice.langId', speechLang: 'id-ID' },
+  { code: 'jv', labelKey: 'voice.langJv', speechLang: 'jv-ID' },
+  { code: 'su', labelKey: 'voice.langSu', speechLang: 'su-ID' },
 ];
 
 export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
+  const { t } = useT();
   const { voiceText, setVoiceText } = useTriageStore();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -25,7 +27,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
   const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [transcription, setTranscription] = useState('');
-  const [engineLabel, setEngineLabel] = useState('');
+  const [engineCode, setEngineCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [micPermission, setMicPermission] = useState<boolean | null>(null);
   const [voskStatus, setVoskStatus] = useState<{ downloaded: boolean; sizeMB: number } | null>(null);
@@ -49,11 +51,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
       // result.text sudah berisi FULL accumulated text (final + interim)
       // Jangan APPEND, karena event onresult mengirim seluruh teks setiap kali
       setTranscription(result.text);
-      if (result.engine === 'web-speech') {
-        setEngineLabel('Online');
-      } else if (result.engine === 'vosk') {
-        setEngineLabel('Offline (Vosk)');
-      }
+      setEngineCode(result.engine === 'vosk' ? 'vosk' : 'web-speech');
     });
 
     errorUnsubscribe.current = voiceService.onError((msg) => {
@@ -87,7 +85,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
       }
 
       setTranscription('');
-      setEngineLabel('');
+      setEngineCode('');
 
       const engine = voiceService.getBestEngine();
       if (engine === 'none' && !navigator.onLine) {
@@ -139,16 +137,16 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
       <ProgressStepper currentStep={3} className="mb-6" />
 
       <h2 className="text-xl font-semibold text-text-primary mb-1">
-        Tambahkan suara (opsional)
+        {t('voice.title')}
       </h2>
       <p className="text-sm text-text-secondary mb-6">
-        Ceritakan keluhan dengan bahasa yang nyaman
+        {t('voice.subtitle')}
       </p>
 
-      {engineLabel && (
+      {engineCode && (
         <div className="flex items-center justify-center gap-1 mb-2">
           <span className="text-xs px-2 py-0.5 rounded-full bg-accent-bg text-accent font-medium">
-            {engineLabel}
+            {engineCode === 'vosk' ? t('voice.engineOffline') : t('voice.engineOnline')}
           </span>
         </div>
       )}
@@ -167,7 +165,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
             }
             disabled:opacity-50 disabled:cursor-not-allowed
           `}
-          aria-label={isRecording ? 'Berhenti merekam' : 'Mulai merekam'}
+          aria-label={isRecording ? t('voice.micStopAria') : t('voice.micStartAria')}
         >
           {isProcessing ? (
             <Loader2 className="w-10 h-10 animate-spin" />
@@ -177,13 +175,13 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
         </button>
 
         <p className="mt-3 text-sm font-medium text-text-secondary">
-          {isRecording ? 'Rekam... Ketuk untuk berhenti' : isProcessing ? 'Memproses...' : 'Tekan & Bicara'}
+          {isRecording ? t('voice.stateRecording') : isProcessing ? t('voice.stateProcessing') : t('voice.pressAndTalk')}
         </p>
 
         {isRecording && (
           <div className="flex items-center gap-2 mt-2">
             <span className="w-2 h-2 rounded-full bg-merah animate-pulse" />
-            <span className="text-xs text-merah font-medium">Merekam...</span>
+            <span className="text-xs text-merah font-medium">{t('voice.recordingLive')}</span>
           </div>
         )}
       </div>
@@ -193,7 +191,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
           onClick={() => setShowLangPicker(!showLangPicker)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-surface text-sm text-text-primary mx-auto"
         >
-          <span>Bahasa: {selectedLang.label}</span>
+          <span>{t('voice.langPrefix', { name: t(selectedLang.labelKey) })}</span>
           <ChevronDown className="w-4 h-4" />
         </button>
 
@@ -210,7 +208,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
                   selectedLang.code === lang.code ? 'bg-accent-bg text-accent font-medium' : 'text-text-primary'
                 }`}
               >
-                {lang.label}
+                {t(lang.labelKey)}
               </button>
             ))}
           </div>
@@ -233,7 +231,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
           <div className="flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-merah mt-0.5 shrink-0" />
             <div className="flex-1">
-              <p className="text-sm text-red-800">{error}</p>
+              <p className="text-sm text-red-800">{translateErrorMessage(t, error)}</p>
               {error.includes('unduh model') && (
                 <button
                   onClick={handleDownloadModel}
@@ -245,7 +243,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
                   ) : (
                     <Download className="w-4 h-4" />
                   )}
-                  {isDownloadingModel ? 'Mengunduh...' : 'Unduh Model Suara (~22MB)'}
+                  {isDownloadingModel ? t('voice.downloading') : t('voice.downloadModel', { size: voskStatus?.sizeMB ?? 22 })}
                 </button>
               )}
             </div>
@@ -256,19 +254,19 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
       {voskStatus && !voskStatus.downloaded && !navigator.onLine && (
         <div className="mb-6 p-3 rounded-xl bg-yellow-50 border border-yellow-200">
           <p className="text-xs text-yellow-800">
-            Mode offline. Unduh model suara (~{voskStatus.sizeMB}MB) saat online untuk pengenalan suara offline.
+            {t('voice.offlineNotice', { size: voskStatus.sizeMB })}
           </p>
         </div>
       )}
 
       <div className="mb-6">
         <label className="block text-sm font-medium text-text-primary mb-2">
-          Atau ketik keluhan secara manual
+          {t('voice.manualLabel')}
         </label>
         <textarea
           value={manualText}
           onChange={(e) => setManualText(e.target.value)}
-          placeholder="Contoh: Saya demam sejak 3 hari yang lalu, batuk berdahak, dan sesak napas..."
+          placeholder={t('voice.manualPlaceholder')}
           rows={3}
           className="w-full px-4 py-3 rounded-xl border border-border text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent resize-none text-sm"
         />
@@ -282,7 +280,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
           disabled={!manualText.trim() && !transcription}
           className="w-full py-4 bg-primary text-white text-lg font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 active:scale-[0.98] transition-all touch-target"
         >
-          Gunakan Teks Ini
+          {t('voice.useText')}
         </button>
 
         <button
@@ -290,7 +288,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
           className="w-full py-3 flex items-center justify-center gap-2 text-text-secondary font-medium hover:text-text-primary transition-colors touch-target"
         >
           <SkipForward className="w-4 h-4" />
-          <span>Lewati</span>
+          <span>{t('voice.skip')}</span>
         </button>
       </div>
     </div>

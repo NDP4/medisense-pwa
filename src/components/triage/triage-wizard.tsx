@@ -9,6 +9,7 @@ import StepVoice from './step-voice';
 import StepAnalyze from './step-analyze';
 import StepResult from './step-result';
 import { syncManager } from '@/lib/sync';
+import { useT, translateErrorMessage } from '@/lib/i18n/use-t';
 
 /* ── Triage Wizard — Controller 5 Langkah ───────────── */
 
@@ -29,6 +30,7 @@ function sanitizeVoiceText(text: string | null): string | undefined {
 }
 
 export default function TriageWizard() {
+  const { t } = useT();
   const {
     currentStep,
     setStep,
@@ -168,16 +170,16 @@ export default function TriageWizard() {
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
           <AlertCircle className="w-16 h-16 text-merah mb-4" />
           <h2 className="text-xl font-semibold text-text-primary mb-2">
-            Terjadi kesalahan
+            {t('triage.errorTitle')}
           </h2>
           <p className="text-sm text-text-secondary text-center mb-6">
-            {error}
+            {translateErrorMessage(t, error)}
           </p>
           <button
             onClick={() => { setError(null); resetTriage(); }}
             className="px-8 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors"
           >
-            Mulai Ulang
+            {t('triage.restart')}
           </button>
         </div>
       );
@@ -209,23 +211,23 @@ export default function TriageWizard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
         <h2 className="text-xl font-semibold text-text-primary mb-2">
-          Tinggalkan triase?
+          {t('triage.exitTitle')}
         </h2>
         <p className="text-sm text-text-secondary text-center mb-6">
-          Data yang sudah diisi akan hilang
+          {t('triage.exitBody')}
         </p>
         <div className="flex gap-3">
           <button
             onClick={() => setShowExitConfirm(false)}
             className="px-6 py-3 border border-border rounded-xl text-text-primary font-medium hover:bg-muted transition-colors"
           >
-            Kembali
+            {t('triage.back')}
           </button>
           <button
             onClick={handleExitConfirm}
             className="px-6 py-3 bg-merah text-white rounded-xl font-medium hover:bg-merah/90 transition-colors"
           >
-            Tinggalkan
+            {t('triage.leave')}
           </button>
         </div>
       </div>
@@ -240,10 +242,10 @@ export default function TriageWizard() {
           <button
             onClick={handlePrev}
             className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors touch-target"
-            aria-label="Kembali"
+            aria-label={t('triage.ariaBack')}
           >
             <ArrowLeft className="w-5 h-5" />
-            <span>Kembali</span>
+            <span>{t('triage.back')}</span>
           </button>
         </div>
       )}

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { Stethoscope, Activity, Clock, Shield } from 'lucide-react';
 import { useTriageStore } from '@/store/triage-store';
+import { useT, formatDate, translateCondition } from '@/lib/i18n/use-t';
+import LanguageSwitcher from '@/components/ui/language-switcher';
 
 /* ── Home / Dashboard ────────────────────────────────── */
 /* DESIGN.md §7.1 — CTA Triase Baru + Riwayat Terakhir    */
@@ -15,6 +17,7 @@ const LEVEL_STYLES: Record<string, { border: string; bg: string; dot: string; te
 
 export default function HomePage() {
   const { history } = useTriageStore();
+  const { t, lang } = useT();
   const lastThree = history.slice(0, 3);
 
   return (
@@ -24,10 +27,10 @@ export default function HomePage() {
         <div>
           <h1 className="text-xl font-bold text-primary">MediSense AI</h1>
           <p className="text-sm text-text-secondary mt-0.5">
-            Triase Dini berbasis AI
+            {t('home.subtitle')}
           </p>
         </div>
-        <Shield className="w-8 h-8 text-primary/60" strokeWidth={1.5} />
+        <LanguageSwitcher />
       </div>
 
       {/* CTA — Triase Baru */}
@@ -40,8 +43,8 @@ export default function HomePage() {
             <Stethoscope className="w-7 h-7 text-white" strokeWidth={2} />
           </div>
           <div>
-            <p className="text-lg font-bold">+ TRIASE BARU</p>
-            <p className="text-sm text-white/80">Mulai pemeriksaan gejala</p>
+            <p className="text-lg font-bold">{t('home.triageCta')}</p>
+            <p className="text-sm text-white/80">{t('home.triageCtaSub')}</p>
           </div>
         </div>
       </Link>
@@ -51,17 +54,17 @@ export default function HomePage() {
         <div className="bg-surface rounded-xl p-4 text-center border border-border">
           <Activity className="w-5 h-5 text-accent mx-auto mb-1" />
           <p className="text-lg font-bold text-text-primary">{history.length}</p>
-          <p className="text-xs text-text-secondary">Triase</p>
+          <p className="text-xs text-text-secondary">{t('home.statTriage')}</p>
         </div>
         <div className="bg-surface rounded-xl p-4 text-center border border-border">
           <Clock className="w-5 h-5 text-kuning mx-auto mb-1" />
-          <p className="text-lg font-bold text-text-primary">Offline</p>
-          <p className="text-xs text-text-secondary">100%</p>
+          <p className="text-lg font-bold text-text-primary">{t('home.statOffline')}</p>
+          <p className="text-xs text-text-secondary">{t('home.statOfflineValue')}</p>
         </div>
         <div className="bg-surface rounded-xl p-4 text-center border border-border">
           <Shield className="w-5 h-5 text-hijau mx-auto mb-1" />
-          <p className="text-lg font-bold text-text-primary">Aman</p>
-          <p className="text-xs text-text-secondary">Data lokal</p>
+          <p className="text-lg font-bold text-text-primary">{t('home.statSafe')}</p>
+          <p className="text-xs text-text-secondary">{t('home.statSafeSub')}</p>
         </div>
       </div>
 
@@ -69,14 +72,14 @@ export default function HomePage() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold text-text-primary">
-            Riwayat Terakhir
+            {t('home.recentTitle')}
           </h2>
           {history.length > 0 && (
             <Link
               href="/history"
               className="text-sm text-accent font-medium hover:underline"
             >
-              Lihat Semua &gt;
+              {t('home.seeAll')}
             </Link>
           )}
         </div>
@@ -84,14 +87,14 @@ export default function HomePage() {
         {lastThree.length === 0 ? (
           <div className="bg-surface rounded-xl p-8 text-center border border-border">
             <p className="text-sm text-text-secondary">
-              Belum ada sesi triase. Mulai triase baru sekarang!
+              {t('home.emptyHistory')}
             </p>
           </div>
         ) : (
           <div className="space-y-2">
             {lastThree.map((item, idx) => {
               const style = LEVEL_STYLES[item.triageLevel] ?? LEVEL_STYLES.hijau;
-              const timeStr = new Date(item.timestamp).toLocaleDateString('id-ID', {
+              const timeStr = formatDate(lang, item.timestamp, {
                 day: 'numeric',
                 month: 'short',
                 hour: '2-digit',
@@ -107,7 +110,7 @@ export default function HomePage() {
                   <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: style.dot }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-text-primary truncate">
-                      {item.conditions.map(c => c.label).join(', ') || 'Pemeriksaan'}
+                      {item.conditions.map(c => translateCondition(t, c.condition)).join(', ') || t('home.checkup')}
                     </p>
                     <p className="text-xs text-text-secondary">{timeStr}</p>
                   </div>
@@ -115,7 +118,7 @@ export default function HomePage() {
                     className="text-xs font-semibold px-2 py-1 rounded-full"
                     style={{ backgroundColor: style.bg, color: style.text }}
                   >
-                    {item.triageLevel === 'hijau' ? 'Hijau' : item.triageLevel === 'kuning' ? 'Kuning' : 'Merah'}
+                    {t(`levels.${item.triageLevel}`) || item.triageLevel}
                   </span>
                 </div>
               );

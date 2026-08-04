@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { User, Shield, Info, ChevronRight, ChevronDown, Download, Trash2, Eye, Database, AlertTriangle, LogOut, Lock, Phone, Building, BadgeCheck, FileText, Server, Activity } from 'lucide-react';
+import { User, Shield, Info, ChevronRight, ChevronDown, Download, Trash2, Eye, Database, AlertTriangle, LogOut, Lock, Phone, Building, BadgeCheck, FileText, Server, Activity, Globe } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTriageStore } from '@/store/triage-store';
 import { useAuthStore } from '@/store/auth-store';
 import { clearAllData } from '@/lib/db';
 import Modal from '@/components/ui/modal';
+import { useT, useLanguageStore } from '@/lib/i18n/use-t';
+import { FlagID, FlagGB } from '@/components/ui/flags';
 
 // Update saat rilis baru — lihat package.json "version"
 const APP_VERSION = 'v0.2.0';
@@ -16,7 +18,18 @@ const APP_VERSION = 'v0.2.0';
 
 type SectionId = 'data-pengguna' | 'privasi' | 'tentang' | null;
 
+function translateRole(t: (key: string, vars?: Record<string, string | number>) => string, role: string): string {
+  switch (role) {
+    case 'kader': return t('auth.roleKader');
+    case 'bidan': return t('auth.roleBidan');
+    case 'puskesmas': return t('auth.rolePuskesmas');
+    default: return role.replace('_', ' ');
+  }
+}
+
 export default function ProfilePage() {
+  const { t, lang } = useT();
+  const setLang = useLanguageStore((s) => s.setLang);
   const router = useRouter();
   const { history, clearHistory } = useTriageStore();
   const { user, isLoggedIn, logout } = useAuthStore();
@@ -95,7 +108,7 @@ export default function ProfilePage() {
   const sectionContent: Record<string, { icon: typeof User; label: string; content: React.ReactNode }> = {
     'data-pengguna': {
       icon: User,
-      label: 'Data Pengguna',
+      label: t('profile.userPanel'),
       content: isLoggedIn && user ? (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
@@ -103,7 +116,7 @@ export default function ProfilePage() {
               <User className="w-4 h-4 text-primary" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-xs text-text-secondary">Nama Lengkap</p>
+              <p className="text-xs text-text-secondary">{t('profile.fullName')}</p>
               <p className="text-sm font-medium text-text-primary">{user.fullName}</p>
             </div>
           </div>
@@ -112,8 +125,8 @@ export default function ProfilePage() {
               <BadgeCheck className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-xs text-text-secondary">Role</p>
-              <p className="text-sm font-medium text-text-primary">{user.role.replace('_', ' ')}</p>
+              <p className="text-xs text-text-secondary">{t('profile.role')}</p>
+              <p className="text-sm font-medium text-text-primary">{translateRole(t, user.role)}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -121,7 +134,7 @@ export default function ProfilePage() {
               <Phone className="w-4 h-4 text-green-600" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-xs text-text-secondary">Nomor Telepon</p>
+              <p className="text-xs text-text-secondary">{t('profile.phone')}</p>
               <p className="text-sm font-medium text-text-primary">{user.phone || '-'}</p>
             </div>
           </div>
@@ -130,7 +143,7 @@ export default function ProfilePage() {
               <Building className="w-4 h-4 text-purple-600" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-xs text-text-secondary">Puskesmas</p>
+              <p className="text-xs text-text-secondary">{t('profile.puskesmas')}</p>
               <p className="text-sm font-medium text-text-primary">{user.puskesmasName || user.puskesmasId || '-'}</p>
             </div>
           </div>
@@ -138,13 +151,13 @@ export default function ProfilePage() {
       ) : (
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Lock className="w-4 h-4" strokeWidth={1.5} />
-          <span>Login untuk melihat detail pengguna</span>
+          <span>{t('profile.loginToSee')}</span>
         </div>
       ),
     },
     'privasi': {
       icon: Shield,
-      label: 'Privasi & Keamanan',
+      label: t('profile.privacyPanel'),
       content: (
         <div className="space-y-3">
           <div className="flex items-start gap-3">
@@ -152,9 +165,9 @@ export default function ProfilePage() {
               <Lock className="w-4 h-4 text-green-600" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-sm font-medium text-text-primary">Enkripsi Lokal</p>
+              <p className="text-sm font-medium text-text-primary">{t('profile.encTitle')}</p>
               <p className="text-xs text-text-secondary leading-relaxed">
-                Semua data pasien dienkripsi dengan AES-256-GCM sebelum disimpan di perangkat. Hanya Anda yang bisa mengaksesnya.
+                {t('profile.encBody')}
               </p>
             </div>
           </div>
@@ -163,9 +176,9 @@ export default function ProfilePage() {
               <Eye className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-sm font-medium text-text-primary">Privasi by Design</p>
+              <p className="text-sm font-medium text-text-primary">{t('profile.privTitle')}</p>
               <p className="text-xs text-text-secondary leading-relaxed">
-                Data identitas pasien (PII) tidak pernah dikirim ke cloud. Hanya metadata anonim yang disinkronkan untuk dashboard.
+                {t('profile.privBody')}
               </p>
             </div>
           </div>
@@ -174,9 +187,9 @@ export default function ProfilePage() {
               <FileText className="w-4 h-4 text-amber-600" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-sm font-medium text-text-primary">Compliance UU PDP 2022</p>
+              <p className="text-sm font-medium text-text-primary">{t('profile.pdpaTitle')}</p>
               <p className="text-xs text-text-secondary leading-relaxed">
-                MediSense dirancang sesuai prinsip data minim, persetujuan eksplisit, dan hak subjek data.
+                {t('profile.pdpaBody')}
               </p>
             </div>
           </div>
@@ -185,7 +198,7 @@ export default function ProfilePage() {
     },
     'tentang': {
       icon: Info,
-      label: 'Tentang MediSense',
+      label: t('profile.aboutPanel'),
       content: (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
@@ -193,7 +206,7 @@ export default function ProfilePage() {
               <Activity className="w-4 h-4 text-primary" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-xs text-text-secondary">Aplikasi</p>
+              <p className="text-xs text-text-secondary">{t('profile.app')}</p>
               <p className="text-sm font-medium text-text-primary">MediSense AI v0.2.0</p>
             </div>
           </div>
@@ -202,7 +215,7 @@ export default function ProfilePage() {
               <Server className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-xs text-text-secondary">Model AI</p>
+              <p className="text-xs text-text-secondary">{t('profile.modelAi')}</p>
               <p className="text-sm font-medium text-text-primary">MediSense Triage v1.0 (Demo)</p>
             </div>
           </div>
@@ -211,13 +224,12 @@ export default function ProfilePage() {
               <Database className="w-4 h-4 text-green-600" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-xs text-text-secondary">Sesi Triase</p>
-              <p className="text-sm font-medium text-text-primary">{history.length} sesi tersimpan</p>
+              <p className="text-xs text-text-secondary">{t('profile.sessions')}</p>
+              <p className="text-sm font-medium text-text-primary">{t('profile.sessionsValue', { n: history.length })}</p>
             </div>
           </div>
           <p className="text-xs text-text-secondary leading-relaxed pt-2 border-t border-border">
-            MediSense AI adalah platform triase dini berbasis AI untuk kader kesehatan di wilayah 3T Indonesia. 
-            100% offline, real-time on-device inference.
+            {t('profile.aboutBody')}
           </p>
         </div>
       ),
@@ -226,7 +238,7 @@ export default function ProfilePage() {
 
   return (
     <div className="px-4 pt-6 pb-8">
-      <h1 className="text-xl font-bold text-text-primary mb-6">Profil</h1>
+      <h1 className="text-xl font-bold text-text-primary mb-6">{t('profile.title')}</h1>
 
       {/* User card */}
       <div className="bg-surface rounded-xl p-6 border border-border mb-6">
@@ -236,13 +248,13 @@ export default function ProfilePage() {
           </div>
           <div>
             <p className="text-lg font-semibold text-text-primary">
-              {isLoggedIn && user ? user.fullName : 'Pengguna Offline'}
+              {isLoggedIn && user ? user.fullName : t('profile.offlineUser')}
             </p>
             <p className="text-sm text-text-secondary">
-              {isLoggedIn && user ? user.role.replace('_', ' ') : 'Belum login'}
+              {isLoggedIn && user ? translateRole(t, user.role) : t('profile.notLoggedIn')}
             </p>
             <p className="text-xs text-text-secondary mt-0.5">
-              {history.length} triase dilakukan
+              {t('profile.triageDone', { n: history.length })}
             </p>
           </div>
         </div>
@@ -266,7 +278,7 @@ export default function ProfilePage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-text-primary">{sec.label}</p>
                   <p className="text-xs text-text-secondary truncate">
-                    {isOpen ? 'Tutup' : 'Ketuk untuk detail'}
+                    {isOpen ? t('profile.close') : t('profile.tapForDetails')}
                   </p>
                 </div>
                 {isOpen ? (
@@ -289,6 +301,48 @@ export default function ProfilePage() {
         })}
       </div>
 
+      {/* ── Language / Bahasa ── */}
+      <div className="bg-surface rounded-xl border border-border overflow-hidden mb-6">
+        <div className="flex items-center gap-4 p-4">
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+            <Globe className="w-5 h-5 text-primary" strokeWidth={1.5} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-text-primary">{t('profile.languageTitle')}</p>
+            <p className="text-xs text-text-secondary">{t('profile.languageSub')}</p>
+          </div>
+        </div>
+        {/* Segmented control ID / EN */}
+        <div className="px-4 pb-4">
+          <div className="flex gap-1 bg-gray-100 rounded-xl p-1" role="tablist" aria-label={t('profile.languageTitle')}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={lang === 'id'}
+              onClick={() => setLang('id')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-all ${
+                lang === 'id' ? 'bg-white text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              <FlagID className="w-4 h-4" />
+              {t('profile.languageId')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={lang === 'en'}
+              onClick={() => setLang('en')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-all ${
+                lang === 'en' ? 'bg-white text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              <FlagGB className="w-4 h-4" />
+              {t('profile.languageEn')}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* ── Logout ── */}
       {isLoggedIn && (
         <div className="bg-surface rounded-xl border border-border overflow-hidden mb-6">
@@ -300,8 +354,8 @@ export default function ProfilePage() {
               <LogOut className="w-5 h-5 text-red-600" strokeWidth={1.5} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-red-600">Keluar</p>
-              <p className="text-xs text-text-secondary">Logout dari akun Anda</p>
+              <p className="text-sm font-medium text-red-600">{t('profile.logout')}</p>
+              <p className="text-xs text-text-secondary">{t('profile.logoutSub')}</p>
             </div>
           </button>
         </div>
@@ -312,10 +366,10 @@ export default function ProfilePage() {
         <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
             <Database className="w-5 h-5 text-primary" strokeWidth={1.5} />
-            <h2 className="text-base font-semibold text-text-primary">Data Saya</h2>
+            <h2 className="text-base font-semibold text-text-primary">{t('profile.myData')}</h2>
           </div>
           <p className="text-xs text-text-secondary mt-0.5">
-            Kelola data Anda sesuai UU PDP 2022
+            {t('profile.myDataSub')}
           </p>
         </div>
 
@@ -325,9 +379,9 @@ export default function ProfilePage() {
             <Eye className="w-5 h-5 text-blue-600" strokeWidth={1.5} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-text-primary">Riwayat Tersimpan</p>
+            <p className="text-sm font-medium text-text-primary">{t('profile.savedHistory')}</p>
             <p className="text-xs text-text-secondary">
-              {history.length} sesi triase tersimpan di perangkat
+              {t('profile.savedHistorySub', { n: history.length })}
             </p>
           </div>
         </div>
@@ -341,11 +395,11 @@ export default function ProfilePage() {
             <Download className="w-5 h-5 text-green-600" strokeWidth={1.5} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-text-primary">Ekspor Data</p>
+            <p className="text-sm font-medium text-text-primary">{t('profile.exportData')}</p>
             <p className="text-xs text-text-secondary">
-              {exportStatus === 'idle' && 'Download data Anda sebagai JSON'}
-              {exportStatus === 'exported' && '✓ Data berhasil diexport'}
-              {exportStatus === 'error' && 'Gagal mengexport data'}
+              {exportStatus === 'idle' && t('profile.exportSubIdle')}
+              {exportStatus === 'exported' && t('profile.exportSubDone')}
+              {exportStatus === 'error' && t('profile.exportSubError')}
             </p>
           </div>
         </button>
@@ -359,8 +413,8 @@ export default function ProfilePage() {
             <Trash2 className="w-5 h-5 text-red-600" strokeWidth={1.5} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-red-600">Hapus Semua Data</p>
-            <p className="text-xs text-text-secondary">Hapus semua data triase dari perangkat</p>
+            <p className="text-sm font-medium text-red-600">{t('profile.deleteAll')}</p>
+            <p className="text-xs text-text-secondary">{t('profile.deleteAllSub')}</p>
           </div>
         </button>
       </div>
@@ -368,8 +422,7 @@ export default function ProfilePage() {
       {/* Disclaimer */}
       <div className="mt-8 p-4 rounded-xl bg-kuning-bg border border-kuning/20">
         <p className="text-xs text-kuning/80 leading-relaxed">
-          ⚠️ MediSense AI v0.2.0 — Demo menggunakan data sintetis. Bukan untuk diagnosis klinis.
-          Selalu konsultasi dengan tenaga kesehatan untuk keputusan medis.
+          {t('profile.disclaimer')}
         </p>
       </div>
 
@@ -379,31 +432,29 @@ export default function ProfilePage() {
       <Modal
         open={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
-        title="Login untuk Akses Profil Lengkap"
+        title={t('profile.loginPromptTitle')}
       >
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
           <Lock className="w-8 h-8 text-primary" strokeWidth={1.5} />
         </div>
         <h2 id="modal-login-akses-profil-title" className="text-lg font-bold text-text-primary mb-2">
-          Login untuk Akses Profil Lengkap
+          {t('profile.loginPromptTitle')}
         </h2>
         <p className="text-sm text-text-secondary mb-6 leading-relaxed">
-          Dengan login, Anda bisa menyinkronkan data ke cloud,
-          mengelola akun, dan mengakses fitur profil lengkap.
-          Data offline Anda tetap aman.
+          {t('profile.loginPromptBody')}
         </p>
         <button
           onClick={() => router.push('/login')}
           className="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors mb-3"
         >
-          Login
+          {t('profile.loginBtn')}
         </button>
         <button
           type="button"
           onClick={() => setShowLoginPrompt(false)}
           className="text-sm text-text-secondary hover:text-text-primary transition-colors"
         >
-          Nanti
+          {t('profile.later')}
         </button>
       </Modal>
 
@@ -411,7 +462,7 @@ export default function ProfilePage() {
       <Modal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Hapus Semua Data"
+        title={t('profile.deleteModalTitle')}
         destructive
         requireExplicitClose
       >
@@ -419,14 +470,14 @@ export default function ProfilePage() {
           <Trash2 className="w-8 h-8 text-red-600" strokeWidth={1.5} />
         </div>
         <h2 id="modal-hapus-data-title" className="text-lg font-bold text-text-primary mb-2">
-          Hapus Semua Data?
+          {t('profile.deleteModalTitle')}
         </h2>
         <p className="text-sm text-text-secondary mb-6 leading-relaxed">
           {deleteStatus === 'deleting'
-            ? 'Menghapus data...'
+            ? t('profile.deleteBodyDeleting')
             : deleteStatus === 'done'
-            ? '✓ Semua data telah dihapus'
-            : 'Data yang dihapus tidak dapat dikembalikan. Semua riwayat triase lokal akan hilang.'}
+            ? t('profile.deleteBodyDone')
+            : t('profile.deleteBodyConfirm')}
         </p>
 
         {deleteStatus === 'idle' && (
@@ -436,14 +487,14 @@ export default function ProfilePage() {
               onClick={handleDeleteAll}
               className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors"
             >
-              Ya, Hapus Semua
+              {t('profile.yesDeleteAll')}
             </button>
             <button
               type="button"
               onClick={() => setShowDeleteModal(false)}
               className="text-sm text-text-secondary hover:text-text-primary transition-colors"
             >
-              Batal
+              {t('profile.cancel')}
             </button>
           </div>
         )}
@@ -453,7 +504,7 @@ export default function ProfilePage() {
       <Modal
         open={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
-        title="Keluar Akun"
+        title={t('profile.logoutModalTitle')}
         destructive
         requireExplicitClose
       >
@@ -461,10 +512,10 @@ export default function ProfilePage() {
           <LogOut className="w-8 h-8 text-red-600" strokeWidth={1.5} />
         </div>
         <h2 id="modal-keluar-akun-title" className="text-lg font-bold text-text-primary mb-2">
-          Keluar Akun?
+          {t('profile.logoutModalTitle')}
         </h2>
         <p className="text-sm text-text-secondary mb-6 leading-relaxed">
-          Anda akan logout dari akun. Data triase offline tetap tersimpan di perangkat.
+          {t('profile.logoutModalBody')}
         </p>
         <div className="w-full space-y-3">
           <button
@@ -472,14 +523,14 @@ export default function ProfilePage() {
             onClick={handleLogout}
             className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors"
           >
-            Ya, Keluar
+            {t('profile.yesLogout')}
           </button>
           <button
             type="button"
             onClick={() => setShowLogoutModal(false)}
             className="text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
-            Batal
+            {t('profile.cancel')}
           </button>
         </div>
       </Modal>

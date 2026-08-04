@@ -4,11 +4,13 @@ import { ArrowRight } from 'lucide-react';
 import ProgressStepper from '@/components/ui/progress-stepper';
 import { useTriageStore, SYMPTOM_DEFS } from '@/store/triage-store';
 import { SYMPTOM_ICONS } from './symptom-icons';
+import { useT } from '@/lib/i18n/use-t';
 
 /* ── Step 2/5 — Input Gejala ────────────────────────── */
 /* DESIGN.md §7.3 — Grid ilustrasi 2 kolom, multi-select  */
 
 export default function StepSymptoms({ onNext }: { onNext: () => void }) {
+  const { t } = useT();
   const { selectedSymptoms, toggleSymptom } = useTriageStore();
   const count = selectedSymptoms.size;
 
@@ -19,10 +21,10 @@ export default function StepSymptoms({ onNext }: { onNext: () => void }) {
 
       {/* Title */}
       <h2 className="text-xl font-semibold text-text-primary mb-1">
-        Apa keluhan yang dirasakan?
+        {t('symptoms.title')}
       </h2>
       <p className="text-sm text-text-secondary mb-5">
-        Pilih semua gejala yang sesuai
+        {t('symptoms.subtitle')}
       </p>
 
       {/* Symptom Grid — 2 columns */}
@@ -43,7 +45,7 @@ export default function StepSymptoms({ onNext }: { onNext: () => void }) {
                 }
               `}
               aria-pressed={isSelected}
-              aria-label={`Gejala: ${symptom.label}`}
+              aria-label={t('symptoms.ariaSymptom', { name: t(`symptomsNs.${symptom.id}`) })}
             >
               {/* SVG Illustration 120x120 -> 96x96 in grid */}
               <div className="w-24 h-24 flex items-center justify-center">
@@ -51,14 +53,14 @@ export default function StepSymptoms({ onNext }: { onNext: () => void }) {
                   <IconComponent size={96} />
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center text-text-secondary text-xs">
-                    {symptom.label[0]}
+                    {t(`symptomsNs.${symptom.id}`)[0]}
                   </div>
                 )}
               </div>
 
               {/* Label */}
               <span className="text-sm font-medium text-text-primary text-center leading-tight">
-                {symptom.label}
+                {t(`symptomsNs.${symptom.id}`)}
               </span>
 
               {/* Check indicator */}
@@ -77,8 +79,8 @@ export default function StepSymptoms({ onNext }: { onNext: () => void }) {
       {/* Hint */}
       <p className="text-xs text-text-secondary text-center mb-4">
         {count === 0
-          ? 'Pilih minimal 1 gejala'
-          : `${count} gejala dipilih`}
+          ? t('symptoms.hintMinOne')
+          : t('symptoms.hintSelected', { n: count })}
       </p>
 
       {/* Spacer */}
@@ -90,7 +92,7 @@ export default function StepSymptoms({ onNext }: { onNext: () => void }) {
         disabled={count === 0}
         className="w-full flex items-center justify-center gap-2 py-4 bg-primary text-white text-lg font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 active:scale-[0.98] transition-all touch-target"
       >
-        <span>Selanjutnya ({count} dipilih)</span>
+        <span>{t('symptoms.btnSelected', { n: count })}</span>
         <ArrowRight className="w-5 h-5" />
       </button>
     </div>

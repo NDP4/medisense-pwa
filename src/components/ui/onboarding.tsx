@@ -11,6 +11,7 @@ import {
   Check,
   MoveHorizontal,
 } from 'lucide-react';
+import { useT } from '@/lib/i18n/use-t';
 
 /* ── Onboarding 5 Layar untuk Kader Baru ─────────────── */
 /* DESIGN.md §1 — "Warna adalah bahasa pertama"          */
@@ -19,40 +20,40 @@ import {
 
 interface OnboardingSlide {
   icon: typeof Stethoscope;
-  title: string;
-  description: string;
+  titleKey: string;
+  descKey: string;
   color: string;
 }
 
 const SLIDES: OnboardingSlide[] = [
   {
     icon: Stethoscope,
-    title: 'Triase Cepat',
-    description: 'Pilih gejala yang dirasakan pasien dengan mengetuk ilustrasi. Cukup 1-2 menit untuk dapat hasil awal.',
+    titleKey: 'onboarding.t1',
+    descKey: 'onboarding.d1',
     color: '#1E3A5F',
   },
   {
     icon: Mic,
-    title: 'Rekam Suara',
-    description: 'Pasien bisa ceritakan keluhannya dengan bahasa sendiri. Suara langsung diubah ke teks — offline penuh.',
+    titleKey: 'onboarding.t2',
+    descKey: 'onboarding.d2',
     color: '#3B82F6',
   },
   {
     icon: BrainCircuit,
-    title: 'Analisis AI',
-    description: 'Aplikasi akan menganalisis gejala dan suara secara otomatis di perangkat Anda. Data tetap aman dan privat.',
+    titleKey: 'onboarding.t3',
+    descKey: 'onboarding.d3',
     color: '#8B5CF6',
   },
   {
     icon: HeartPulse,
-    title: 'Hasil 3 Warna',
-    description: 'Hijau untuk rawat jalan, Kuning untuk rujuk 24 jam, Merah untuk darurat — lengkap dengan panduan tindakan.',
+    titleKey: 'onboarding.t4',
+    descKey: 'onboarding.d4',
     color: '#16A34A',
   },
   {
     icon: ShieldCheck,
-    title: 'Data Aman',
-    description: 'Semua data pasien disimpan terenkripsi di perangkat Anda. Tidak ada data pribadi yang dikirim ke internet.',
+    titleKey: 'onboarding.t5',
+    descKey: 'onboarding.d5',
     color: '#DC2626',
   },
 ];
@@ -65,6 +66,7 @@ interface OnboardingProps {
 }
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
+  const { t } = useT();
   const [slideIndex, setSlideIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const slide = SLIDES[slideIndex];
@@ -119,7 +121,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       className="fixed inset-0 z-50 bg-white flex flex-col safe-area-inset"
       role="dialog"
       aria-modal="true"
-      aria-label="Pengenalan aplikasi"
+      aria-label={t('onboarding.aria')}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onKeyDown={handleKeyDown}
@@ -137,11 +139,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       >
         {isLast ? (
           <>
-            Selesai
+            {t('onboarding.done')}
             <Check className="w-3.5 h-3.5" />
           </>
         ) : (
-          'Lewati'
+          t('onboarding.skip')
         )}
       </button>
 
@@ -157,31 +159,31 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
         {/* Slide number */}
         <span className="text-[10px] font-semibold uppercase tracking-widest text-text-secondary mb-2">
-          Langkah {slideIndex + 1} dari {SLIDES.length}
+          {t('onboarding.stepOf', { current: slideIndex + 1, total: SLIDES.length })}
         </span>
 
         {/* Title */}
         <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-2 leading-tight">
-          {slide.title}
+          {t(slide.titleKey)}
         </h2>
 
         {/* Description */}
         <p className="text-sm text-text-secondary leading-relaxed px-2 max-w-xs">
-          {slide.description}
+          {t(slide.descKey)}
         </p>
       </div>
 
       {/* Bottom controls — tetap di bawah, compact */}
       <div className="px-6 pb-6 pt-2 space-y-4 shrink-0">
         {/* Dots */}
-        <div className="flex items-center justify-center gap-1.5" role="tablist" aria-label="Indikator langkah">
+        <div className="flex items-center justify-center gap-1.5" role="tablist" aria-label={t('onboarding.stepsAria')}>
           {SLIDES.map((_, idx) => (
             <button
               key={idx}
               type="button"
               role="tab"
               aria-selected={idx === slideIndex}
-              aria-label={`Langkah ${idx + 1}`}
+              aria-label={t('onboarding.ariaStep', { n: idx + 1 })}
               onClick={() => handleDotClick(idx)}
               className={`rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-accent/40 ${
                 idx === slideIndex
@@ -196,12 +198,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         {isLast ? (
           <div className="flex items-center justify-center gap-2 text-text-secondary">
             <MoveHorizontal className="w-5 h-5 animate-pulse" />
-            <span className="text-xs font-medium">Geser ke kanan untuk melihat lagi</span>
+            <span className="text-xs font-medium">{t('onboarding.swipeReview')}</span>
           </div>
         ) : (
           <div className="flex items-center justify-center gap-2 text-text-secondary">
             <MoveHorizontal className="w-5 h-5 animate-pulse" />
-            <span className="text-xs font-medium">Geser untuk lanjut</span>
+            <span className="text-xs font-medium">{t('onboarding.swipeContinue')}</span>
           </div>
         )}
 
@@ -210,11 +212,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           <button
             type="button"
             onClick={handlePrev}
-            aria-label="Langkah sebelumnya"
+            aria-label={t('onboarding.prevAria')}
             className="flex items-center justify-center gap-1 mx-auto px-4 py-2 rounded-xl border border-border text-text-primary font-semibold text-sm hover:bg-gray-50 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            Kembali
+            {t('onboarding.prev')}
           </button>
         )}
       </div>

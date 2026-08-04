@@ -57,6 +57,30 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Set <html lang> sebelum paint dari localStorage medisense_lang */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('medisense_lang');
+                  var lang = 'id';
+                  if (stored) {
+                    var parsed = JSON.parse(stored);
+                    if (parsed && parsed.state && (parsed.state.lang === 'id' || parsed.state.lang === 'en')) {
+                      lang = parsed.state.lang;
+                    }
+                  } else if (navigator.language && navigator.language.toLowerCase().indexOf('en') === 0) {
+                    lang = 'en';
+                  }
+                  document.documentElement.lang = lang;
+                } catch (e) {
+                  document.documentElement.lang = 'id';
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body className={`${inter.variable} font-sans`}>{children}</body>
     </html>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Phone } from 'lucide-react';
+import { useT } from '@/lib/i18n/use-t';
 
 /* ── DESIGN.md §6.2 Tombol 119 Emergency ──────────────── */
 /* Ukuran 2x tombol normal, background merah solid, pulse  */
@@ -15,6 +16,7 @@ function callEmergency() {
 }
 
 export default function EmergencyButton({ className = '' }: EmergencyButtonProps) {
+  const { t } = useT();
   return (
     <button
       onClick={callEmergency}
@@ -29,11 +31,11 @@ export default function EmergencyButton({ className = '' }: EmergencyButtonProps
         touch-target
         ${className}
       `}
-      aria-label="Hubungi 119 — Darurat"
+      aria-label={t('emergency.aria')}
       type="button"
     >
       <Phone className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={2.5} />
-      <span>HUBUNGI 119</span>
+      <span>{t('emergency.label')}</span>
     </button>
   );
 }

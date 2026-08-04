@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { Phone, Lock, AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { normalizePhone } from '@/lib/utils';
+import { useT, translateErrorMessage } from '@/lib/i18n/use-t';
 
 export default function LoginPage() {
+  const { t } = useT();
   const router = useRouter();
   const { login } = useAuthStore();
 
@@ -85,7 +87,7 @@ export default function LoginPage() {
           className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm">Kembali</span>
+          <span className="text-sm">{t('auth.back')}</span>
         </button>
       </div>
 
@@ -96,23 +98,23 @@ export default function LoginPage() {
               <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-text-primary">Masuk ke MediSense</h1>
+          <h1 className="text-2xl font-bold text-text-primary">{t('auth.loginTitle')}</h1>
           <p className="text-sm text-text-secondary mt-1">
-            Untuk kader, bidan, dan petugas puskesmas
+            {t('auth.loginSub')}
           </p>
         </div>
 
         {error && (
           <div className="flex items-start gap-2 p-3 mb-4 rounded-lg bg-red-50 border border-red-200">
             <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700">{translateErrorMessage(t, error)}</p>
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-text-primary mb-1">
-              Nomor Telepon
+              {t('auth.phoneLabel')}
             </label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
@@ -121,7 +123,7 @@ export default function LoginPage() {
                 type="tel"
                 value={phone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
-                placeholder="08xxxxxxxxxx"
+                placeholder={t('auth.phonePlaceholderLogin')}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-surface text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all text-base"
                 inputMode="numeric"
                 autoComplete="tel"
@@ -131,7 +133,7 @@ export default function LoginPage() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-text-primary mb-1">
-              Password
+              {t('auth.passwordLabel')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
@@ -140,14 +142,14 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimal 8 karakter"
+                placeholder={t('auth.passPlaceholder')}
                 className="w-full pl-10 pr-12 py-3 rounded-lg border border-border bg-surface text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all text-base"
                 autoComplete="current-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                aria-label={showPassword ? t('auth.hidePass') : t('auth.showPass')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -166,14 +168,14 @@ export default function LoginPage() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             )}
-            {loading ? 'Memproses...' : 'Masuk'}
+            {loading ? t('auth.loginLoading') : t('auth.loginBtn')}
           </button>
         </form>
 
         <p className="text-center text-sm text-text-secondary mt-6">
-          Belum punya akun?{' '}
+          {t('auth.noAccount')}{' '}
           <Link href="/register" className="text-accent font-medium hover:underline">
-            Daftar di sini
+            {t('auth.registerHere')}
           </Link>
         </p>
       </div>

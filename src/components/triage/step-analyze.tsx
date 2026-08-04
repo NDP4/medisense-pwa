@@ -5,6 +5,7 @@ import { Activity, Lock } from 'lucide-react';
 import ProgressStepper from '@/components/ui/progress-stepper';
 import { useTriageStore, type TriageResult, type TriageCondition, getTriageLevel, getTriageLabel, getRecommendations } from '@/store/triage-store';
 import { medisense } from '@/lib/medisense';
+import { useT } from '@/lib/i18n/use-t';
 
 /* ── Step 4/5 — Analisis AI (Loading) ───────────────── */
 /* DESIGN.md §7.5 — Logo berdenyut + progress bar         */
@@ -69,6 +70,7 @@ interface StepAnalyzeProps {
 }
 
 export default function StepAnalyze({ onComplete, onError }: StepAnalyzeProps) {
+  const { t } = useT();
   const { selectedPatient, selectedSymptoms, startAnalysis, setAnalysisProgress } = useTriageStore();
   const hasRun = useRef(false);
 
@@ -178,7 +180,7 @@ export default function StepAnalyze({ onComplete, onError }: StepAnalyzeProps) {
         setTimeout(() => onComplete(result), 600);
       } catch (err) {
         console.error('Analysis error:', err);
-        onError(err instanceof Error ? err.message : 'Gagal menganalisis gejala');
+        onError(err instanceof Error ? err.message : t('analyze.errorFallback'));
       }
     };
 
@@ -201,10 +203,10 @@ export default function StepAnalyze({ onComplete, onError }: StepAnalyzeProps) {
 
       {/* Status text */}
       <h2 className="text-xl font-semibold text-text-primary mb-2">
-        Menganalisis gejala...
+        {t('analyze.title')}
       </h2>
       <p className="text-sm text-text-secondary mb-8">
-        Sebentar, sedang diproses
+        {t('analyze.subtitle')}
       </p>
 
       {/* Progress Bar */}
@@ -219,7 +221,7 @@ export default function StepAnalyze({ onComplete, onError }: StepAnalyzeProps) {
       <div className="flex items-start gap-2 mt-8 px-4 py-3 rounded-xl bg-muted max-w-xs">
         <Lock className="w-4 h-4 text-text-secondary mt-0.5 shrink-0" />
         <p className="text-xs text-text-secondary leading-relaxed">
-          Proses ini berjalan offline di perangkat Anda. Data aman dan tidak dikirim ke server.
+          {t('analyze.disclaimer')}
         </p>
       </div>
     </div>

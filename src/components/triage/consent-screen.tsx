@@ -1,6 +1,7 @@
 'use client';
 
 import { Shield, Check, X } from 'lucide-react';
+import { useT } from '@/lib/i18n/use-t';
 
 const CONSENT_VERSION = 'v1.0';
 const CONSENT_STORAGE_KEY = 'medisense_consent';
@@ -10,6 +11,7 @@ interface ConsentScreenProps {
 }
 
 export default function ConsentScreen({ onConsent }: ConsentScreenProps) {
+  const { t } = useT();
   const handleConsent = () => {
     localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify({
       version: CONSENT_VERSION,
@@ -25,64 +27,63 @@ export default function ConsentScreen({ onConsent }: ConsentScreenProps) {
         <div className="flex justify-center mb-4">
           <Shield size={56} className="text-white" />
         </div>
-        <h1 className="text-xl font-bold text-center">Persetujuan Penggunaan Data</h1>
+        <h1 className="text-xl font-bold text-center">{t('consent.title')}</h1>
         <p className="text-center mt-2 text-blue-100 text-sm">
-          Baca informasi berikut sebelum menggunakan MediSense
+          {t('consent.subtitle')}
         </p>
       </div>
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 text-sm text-gray-700">
         <section>
-          <h2 className="font-semibold text-base text-gray-900 mb-2">1. Tujuan Pengumpulan Data</h2>
-          <p>Data yang Anda masukkan digunakan untuk:</p>
+          <h2 className="font-semibold text-base text-gray-900 mb-2">{t('consent.s1Title')}</h2>
+          <p>{t('consent.s1Intro')}</p>
           <ul className="list-disc pl-5 mt-1 space-y-1">
-            <li>Analisis triase dini berbasis kecerdasan buatan</li>
-            <li>Rekomendasi tindakan medis darurat</li>
-            <li>Peningkatan akurasi model AI melalui pembelajaran federasi</li>
+            <li>{t('consent.s1L1')}</li>
+            <li>{t('consent.s1L2')}</li>
+            <li>{t('consent.s1L3')}</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="font-semibold text-base text-gray-900 mb-2">2. Jenis Data yang Dikumpulkan</h2>
+          <h2 className="font-semibold text-base text-gray-900 mb-2">{t('consent.s2Title')}</h2>
           <ul className="list-disc pl-5 mt-1 space-y-1">
-            <li>Data demografis (usia, jenis kelamin)</li>
-            <li>Gejala yang dipilih oleh pengguna</li>
-            <li>Hasil analisis triase (tingkat keparahan, kondisi terdeteksi)</li>
-            <li>Rekaman suara yang diubah menjadi teks (opsional)</li>
+            <li>{t('consent.s2L1')}</li>
+            <li>{t('consent.s2L2')}</li>
+            <li>{t('consent.s2L3')}</li>
+            <li>{t('consent.s2L4')}</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="font-semibold text-base text-gray-900 mb-2">3. Hak Subjek Data</h2>
-          <p>Sesuai UU PDP 2022, Anda berhak untuk:</p>
+          <h2 className="font-semibold text-base text-gray-900 mb-2">{t('consent.s3Title')}</h2>
+          <p>{t('consent.s3Intro')}</p>
           <ul className="list-disc pl-5 mt-1 space-y-1">
-            <li>Mengakses data yang tersimpan</li>
-            <li>Memperbaiki data yang tidak akurat</li>
-            <li>Menghapus data Anda kapan saja</li>
-            <li>Mengekspor data Anda (portabilitas data)</li>
+            <li>{t('consent.s3L1')}</li>
+            <li>{t('consent.s3L2')}</li>
+            <li>{t('consent.s3L3')}</li>
+            <li>{t('consent.s3L4')}</li>
           </ul>
-          <p className="mt-2">Kelola hak Anda melalui halaman Profil &gt; Data Saya.</p>
+          <p className="mt-2">{t('consent.s3Outro')}</p>
         </section>
 
         <section>
-          <h2 className="font-semibold text-base text-gray-900 mb-2">4. Periode Retensi</h2>
-          <p>Data disimpan selama maksimal 2 (dua) tahun sesuai standar rekam medis dasar.</p>
+          <h2 className="font-semibold text-base text-gray-900 mb-2">{t('consent.s4Title')}</h2>
+          <p>{t('consent.s4Body')}</p>
         </section>
 
         <section>
-          <h2 className="font-semibold text-base text-gray-900 mb-2">5. Keamanan Data</h2>
+          <h2 className="font-semibold text-base text-gray-900 mb-2">{t('consent.s5Title')}</h2>
           <ul className="list-disc pl-5 mt-1 space-y-1">
-            <li>Data Anda dienkripsi (AES-256-GCM) sebelum disimpan di perangkat Anda</li>
-            <li>Data pasien (PII) tidak pernah dikirim ke cloud — hanya metadata anonim</li>
-            <li>Semua pemrosesan AI terjadi di perangkat Anda (offline)</li>
+            <li>{t('consent.s5L1')}</li>
+            <li>{t('consent.s5L2')}</li>
+            <li>{t('consent.s5L3')}</li>
           </ul>
         </section>
 
         <section className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
           <p className="text-yellow-800 text-xs">
-            ⚕️ MediSense adalah alat bantu triase, bukan pengganti diagnosis dokter. 
-            Selalu konsultasikan kondisi darurat dengan tenaga kesehatan profesional.
+            {t('consent.disclaimer')}
           </p>
         </section>
       </div>
@@ -94,14 +95,14 @@ export default function ConsentScreen({ onConsent }: ConsentScreenProps) {
           className="w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 hover:bg-green-700 active:scale-[0.98] transition-all"
         >
           <Check size={20} />
-          Setuju & Lanjutkan
+          {t('consent.agree')}
         </button>
         <a
           href="/"
           className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors block text-center"
         >
           <X size={20} />
-          Tidak Setuju
+          {t('consent.disagree')}
         </a>
       </div>
     </div>

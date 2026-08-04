@@ -1,10 +1,11 @@
 'use client';
 
 import { Check } from 'lucide-react';
+import { useT } from '@/lib/i18n/use-t';
 
 /* ── DESIGN.md §6.6 Progress Stepper ─────────────────── */
 
-const STEP_LABELS = ['Pasien', 'Gejala', 'Suara', 'Proses', 'Hasil'];
+const STEP_KEYS = ['steps.patient', 'steps.symptoms', 'steps.voice', 'steps.analyze', 'steps.result'];
 
 interface ProgressStepperProps {
   currentStep: number; // 1-5
@@ -15,9 +16,10 @@ export default function ProgressStepper({
   currentStep,
   className = '',
 }: ProgressStepperProps) {
+  const { t } = useT();
   return (
     <div className={`flex items-center justify-between w-full px-2 ${className}`}>
-      {STEP_LABELS.map((label, idx) => {
+      {STEP_KEYS.map((key, idx) => {
         const stepNum = idx + 1;
         const isActive = stepNum === currentStep;
         const isCompleted = stepNum < currentStep;
@@ -43,7 +45,7 @@ export default function ProgressStepper({
             </div>
 
             {/* Connector line */}
-            {idx < STEP_LABELS.length - 1 && (
+            {idx < STEP_KEYS.length - 1 && (
               <div
                 className={`
                   h-0.5 w-full mt-4 -ml-2 mr-2
@@ -62,7 +64,7 @@ export default function ProgressStepper({
                 ${isUpcoming ? 'text-text-secondary' : ''}
               `}
             >
-              {label}
+              {t(key)}
             </span>
           </div>
         );

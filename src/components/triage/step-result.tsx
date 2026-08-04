@@ -5,6 +5,7 @@ import { CheckCircle, AlertTriangle, XCircle, RefreshCw, Lock } from 'lucide-rea
 import ProgressStepper from '@/components/ui/progress-stepper';
 import EmergencyButton from '@/components/ui/emergency-button';
 import { useTriageStore, type TriageResult } from '@/store/triage-store';
+import { useT, translateLevel, translateCondition, translateRecommendations } from '@/lib/i18n/use-t';
 
 /* ── Step 5/5 — HASIL TRIASE (LAYAR PALING KRITIS) ──── */
 /* DESIGN.md §7.6 — Background FULL warna, 3 varian        */
@@ -33,6 +34,7 @@ function formatConfidence(val: number): string {
 }
 
 export default function StepResult({ onRestart, onSync }: StepResultProps) {
+  const { t } = useT();
   const { result, syncStatus, triageSessionId } = useTriageStore();
   const [showDetail, setShowDetail] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
@@ -46,13 +48,14 @@ export default function StepResult({ onRestart, onSync }: StepResultProps) {
   if (!result) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-text-secondary">Hasil tidak tersedia</p>
+        <p className="text-text-secondary">{t('result.noResult')}</p>
       </div>
     );
   }
 
-  const { triageLevel, triageLabel, conditions, recommendations } = result;
+  const { triageLevel, conditions, recommendations } = result;
   const isMerah = triageLevel === 'merah';
+  const translatedRecs = translateRecommendations(t, recommendations);
 
   // Background color berdasarkan level
   const bgClass = {
@@ -66,7 +69,7 @@ export default function StepResult({ onRestart, onSync }: StepResultProps) {
       {/* Top safety chip */}
       <div className="flex items-center justify-center gap-1.5 pt-4 pb-2">
         <Lock className="w-3.5 h-3.5 text-white/70" strokeWidth={2} />
-        <span className="text-xs text-white/70 font-medium">Data aman di perangkat</span>
+        <span className="text-xs text-white/70 font-medium">{t('result.dataSafe')}</span>
       </div>
 
       {/* Content area — fade in */}
@@ -83,7 +86,7 @@ export default function StepResult({ onRestart, onSync }: StepResultProps) {
 
         {/* Level label — large */}
         <h1 className="text-4xl font-bold mb-2 text-center text-white drop-shadow-sm">
-          {triageLabel}
+          {translateLevel(t, triageLevel)}
         </h1>
 
         {/* Conditions */}
@@ -91,7 +94,7 @@ export default function StepResult({ onRestart, onSync }: StepResultProps) {
           <div className="mb-4 text-center">
             {conditions.map((c, idx) => (
               <p key={idx} className="text-lg font-semibold text-white/90">
-                {c.label}
+                {translateCondition(t, c.condition)}
                 <span className="ml-2 text-sm text-white/70">
                   ({formatConfidence(c.confidence)})
                 </span>
@@ -105,14 +108,14 @@ export default function StepResult({ onRestart, onSync }: StepResultProps) {
 
         {/* Recommendations */}
         <ul className="w-full space-y-3 mb-6">
-          {recommendations.map((rec, idx) => (
+          {translatedRecs.map((rec, idx) => (
             <li
               key={idx}
               className="flex items-start gap-3 text-sm text-white/90 leading-relaxed animate-fade-in"
               style={{ animationDelay: `${idx * 150}ms` }}
             >
               <span className="mt-0.5 shrink-0">
-                {rec.startsWith('SEGERA') || rec.startsWith('Jangan') ? (
+                {rec.startsWith('SEGERA') || rec.startsWith('IMMEDIATELY') || rec.startsWith('Jangan') || rec.startsWith('Do not') ? (
                   <AlertTriangle className="w-4 h-4 text-white/80" strokeWidth={2.5} />
                 ) : (
                   <CheckCircle className="w-4 h-4 text-white/80" strokeWidth={2} />
@@ -141,10 +144,10 @@ export default function StepResult({ onRestart, onSync }: StepResultProps) {
         >
           <RefreshCw className={`w-4 h-4 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
           <span>
-            {syncStatus === 'idle' && 'Simpan ke riwayat'}
-            {syncStatus === 'syncing' && 'Menyimpan...'}
-            {syncStatus === 'synced' && 'Tersimpan ✓'}
-            {syncStatus === 'error' && 'Gagal simpan — ketuk untuk ulang'}
+            {syncStatus === 'idle' && t('result.syncIdle')}
+            {syncStatus === 'syncing' && t('result.syncSyncing')}
+            {syncStatus === 'synced' && t('result.syncSynced')}
+            {syncStatus === 'error' && t('result.syncError')}
           </span>
         </button>
 
@@ -153,7 +156,7 @@ export default function StepResult({ onRestart, onSync }: StepResultProps) {
           onClick={onRestart}
           className="w-full py-4 rounded-xl border-2 border-white/40 text-white text-lg font-semibold hover:bg-white/10 active:scale-[0.98] transition-all touch-target"
         >
-          Triase Baru
+          {t('result.newTriage')}
         </button>
 
         {/* ── Kembali ke Beranda ── */}
@@ -161,14 +164,13 @@ export default function StepResult({ onRestart, onSync }: StepResultProps) {
           href="/"
           className="w-full block text-center py-3 mt-2 rounded-xl text-white/80 text-base font-medium hover:text-white hover:bg-white/5 active:scale-[0.98] transition-all touch-target"
         >
-          Kembali ke Beranda
+          {t('result.backHome')}
         </a>
 
         {/* ── Disclaimer Medis ── */}
         <div className="w-full px-4 py-3 bg-black/10 mt-2 mb-4">
           <p className="text-white text-xs text-center leading-relaxed">
-            ⚕️ Hasil ini adalah alat bantu triase dini, bukan diagnosis dokter. 
-            Segera konsultasi dengan tenaga kesehatan profesional.
+            {t('result.disclaimer')}
           </p>
         </div>
       </div>

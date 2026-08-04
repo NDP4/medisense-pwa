@@ -18,6 +18,7 @@ import { useAuthStore } from '@/store/auth-store';
 import Modal from '@/components/ui/modal';
 import PieChart from '@/components/ui/pie-chart';
 import type { API } from '@/types/database';
+import { useT, translateCondition, localeOf } from '@/lib/i18n/use-t';
 
 /* ── Trend / Statistik Global ──────────────────────────── */
 /* Data agregat dari SELURUH puskesmas via API             */
@@ -26,12 +27,13 @@ import type { API } from '@/types/database';
 type Period = '7d' | '30d' | 'all';
 
 const LEVEL_CONFIG = [
-  { key: 'hijau' as const, label: 'Aman', color: '#16A34A', Icon: CheckCircle },
-  { key: 'kuning' as const, label: 'Waspada', color: '#EAB308', Icon: AlertTriangle },
-  { key: 'merah' as const, label: 'Darurat', color: '#DC2626', Icon: XCircle },
+  { key: 'hijau' as const, labelKey: 'levels.hijau', color: '#16A34A', Icon: CheckCircle },
+  { key: 'kuning' as const, labelKey: 'levels.kuning', color: '#EAB308', Icon: AlertTriangle },
+  { key: 'merah' as const, labelKey: 'levels.merah', color: '#DC2626', Icon: XCircle },
 ];
 
 export default function TrendPage() {
+  const { t, lang } = useT();
   const router = useRouter();
   const { token } = useAuthStore();
 
@@ -98,7 +100,7 @@ export default function TrendPage() {
   const byLevel = data?.triage_by_level ?? { hijau: 0, kuning: 0, merah: 0 };
 
   const pieSlices = LEVEL_CONFIG.map((c) => ({
-    label: c.label,
+    label: t(c.labelKey),
     value: byLevel[c.key],
     color: c.color,
   }));
@@ -114,7 +116,7 @@ export default function TrendPage() {
   // ── Skeleton ──
   if (isInitialLoading) {
     return (
-      <div className="px-4 pt-6 pb-4" role="status" aria-label="Memuat data global">
+      <div className="px-4 pt-6 pb-4" role="status" aria-label={t('trend.ariaSkeleton')}>
         <div className="flex items-center justify-between mb-5">
           <div className="space-y-2"><div className="h-7 w-24 bg-gray-200 rounded-lg animate-pulse" /><div className="h-3 w-32 bg-gray-200 rounded animate-pulse" /></div>
           <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
@@ -122,7 +124,7 @@ export default function TrendPage() {
         <div className="h-8 bg-gray-100 rounded-xl mb-5 animate-pulse" />
         <div className="grid grid-cols-3 gap-2.5 mb-5">{[1, 2, 3].map((i) => <div key={i} className="h-20 bg-gray-200 rounded-xl animate-pulse" />)}</div>
         <div className="h-64 bg-gray-200 rounded-xl mb-4 animate-pulse" />
-        <span className="sr-only">Memuat data global...</span>
+        <span className="sr-only">{t('trend.srLoading')}</span>
       </div>
     );
   }
@@ -133,39 +135,38 @@ export default function TrendPage() {
       <Modal
         open={showLoginModal}
         onClose={() => setShowLoginModal(false)}
-        title="Login untuk Melihat Data Global"
+        title={t('trend.loginTitle')}
       >
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 mx-auto">
           <Lock className="w-8 h-8 text-primary" strokeWidth={1.5} />
         </div>
         <h2 id="modal-login-trend-title" className="text-lg font-bold text-text-primary text-center mb-2">
-          Login untuk Melihat Data Global
+          {t('trend.loginTitle')}
         </h2>
         <p className="text-sm text-text-secondary text-center mb-6 leading-relaxed">
-          Data trend global dari seluruh puskesmas tersedia setelah login.
-          Data offline Anda tetap bisa diakses tanpa login.
+          {t('trend.loginBody')}
         </p>
         <button
           type="button"
           onClick={() => { setShowLoginModal(false); router.push('/login'); }}
           className="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors mb-3"
         >
-          Login
+          {t('trend.loginBtn')}
         </button>
         <button
           type="button"
           onClick={() => setShowLoginModal(false)}
           className="w-full text-sm text-text-secondary hover:text-text-primary transition-colors"
         >
-          Nanti
+          {t('trend.later')}
         </button>
       </Modal>
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Trend Global</h1>
-          <p className="text-xs text-text-secondary mt-0.5">Data agregat seluruh puskesmas</p>
+          <h1 className="text-xl font-bold text-text-primary">{t('trend.title')}</h1>
+          <p className="text-xs text-text-secondary mt-0.5">{t('trend.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {data && (
@@ -174,10 +175,10 @@ export default function TrendPage() {
               onClick={handleRefresh}
               disabled={isRefreshing}
               className="flex items-center gap-1 text-xs text-accent font-medium hover:underline disabled:opacity-50"
-              aria-label="Sinkronkan data global"
+              aria-label={t('trend.ariaRefresh')}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Sync</span>
+              <span className="hidden sm:inline">{t('history.syncBtn')}</span>
             </button>
           )}
           <TrendingUp className="w-6 h-6 text-primary/60" strokeWidth={1.5} />
@@ -185,7 +186,7 @@ export default function TrendPage() {
       </div>
 
       {/* ── Period selector ── */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5" role="tablist" aria-label="Periode data global">
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5" role="tablist" aria-label={t('trend.ariaPeriod')}>
         {(['7d', '30d', 'all'] as Period[]).map((p) => (
           <button
             key={p}
@@ -197,7 +198,7 @@ export default function TrendPage() {
               period === p ? 'bg-white text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
             }`}
           >
-            {p === '7d' ? '7 Hari' : p === '30d' ? '30 Hari' : 'Semua'}
+            {p === '7d' ? t('trend.period7d') : p === '30d' ? t('trend.period30d') : t('trend.periodAll')}
           </button>
         ))}
       </div>
@@ -206,14 +207,14 @@ export default function TrendPage() {
       {error && !data ? (
         <div className="bg-red-50 rounded-xl p-6 text-center border border-red-200" role="alert">
           <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-          <p className="text-sm font-medium text-red-700 mb-1">Gagal Memuat Data</p>
+          <p className="text-sm font-medium text-red-700 mb-1">{t('trend.errorTitle')}</p>
           <p className="text-xs text-red-600 mb-4">{error}</p>
           <button
             type="button"
             onClick={() => { setIsInitialLoading(true); fetchData(period).finally(() => setIsInitialLoading(false)); }}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors"
           >
-            <RefreshCw className="w-4 h-4" /> Coba Lagi
+            <RefreshCw className="w-4 h-4" /> {t('trend.retry')}
           </button>
         </div>
       ) : (
@@ -221,16 +222,16 @@ export default function TrendPage() {
           {/* ── Summary Cards ── */}
           <div className="grid grid-cols-3 gap-2.5 mb-5">
             <div className="bg-surface rounded-xl p-3.5 border border-border text-center">
-              <p className="text-2xl font-bold text-text-primary">{total.toLocaleString('id-ID')}</p>
-              <p className="text-[10px] text-text-secondary mt-0.5">Total Triase</p>
+              <p className="text-2xl font-bold text-text-primary">{total.toLocaleString(localeOf(lang))}</p>
+              <p className="text-[10px] text-text-secondary mt-0.5">{t('trend.cardTotal')}</p>
             </div>
             <div className="bg-surface rounded-xl p-3.5 border border-border text-center">
-              <p className="text-2xl font-bold text-kuning">{byLevel.kuning.toLocaleString('id-ID')}</p>
-              <p className="text-[10px] text-text-secondary mt-0.5">Waspada</p>
+              <p className="text-2xl font-bold text-kuning">{byLevel.kuning.toLocaleString(localeOf(lang))}</p>
+              <p className="text-[10px] text-text-secondary mt-0.5">{t('trend.cardKuning')}</p>
             </div>
             <div className="bg-surface rounded-xl p-3.5 border border-border text-center">
-              <p className="text-2xl font-bold text-merah">{byLevel.merah.toLocaleString('id-ID')}</p>
-              <p className="text-[10px] text-text-secondary mt-0.5">Darurat</p>
+              <p className="text-2xl font-bold text-merah">{byLevel.merah.toLocaleString(localeOf(lang))}</p>
+              <p className="text-[10px] text-text-secondary mt-0.5">{t('trend.cardMerah')}</p>
             </div>
           </div>
 
@@ -238,7 +239,7 @@ export default function TrendPage() {
           <div className="bg-surface rounded-xl p-4 border border-border mb-4">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-4 h-4 text-text-secondary" />
-              <h2 className="text-sm font-semibold text-text-primary">Distribusi Level Triase</h2>
+              <h2 className="text-sm font-semibold text-text-primary">{t('trend.distTitle')}</h2>
               {isPeriodLoading && (
                 <RefreshCw className="w-3.5 h-3.5 text-accent animate-spin ml-auto" />
               )}
@@ -253,15 +254,15 @@ export default function TrendPage() {
 
                 {/* Level legend — interactive */}
                 <div className="w-full grid grid-cols-3 gap-2 mt-1">
-                  {LEVEL_CONFIG.map(({ key, label, color, Icon }) => {
+                  {LEVEL_CONFIG.map(({ key, labelKey, color, Icon }) => {
                     const val = byLevel[key];
                     const pct = total ? Math.round((val / total) * 100) : 0;
                     return (
                       <div key={key} className="text-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
                         <Icon className="w-4 h-4 mx-auto mb-1" style={{ color }} />
                         <p className="text-base font-bold" style={{ color }}>{pct}%</p>
-                        <p className="text-[10px] text-text-secondary">{val.toLocaleString('id-ID')}</p>
-                        <p className="text-[9px] text-text-secondary font-medium">{label}</p>
+                        <p className="text-[10px] text-text-secondary">{val.toLocaleString(localeOf(lang))}</p>
+                        <p className="text-[9px] text-text-secondary font-medium">{t(labelKey)}</p>
                       </div>
                     );
                   })}
@@ -271,22 +272,22 @@ export default function TrendPage() {
                 <div className="w-full grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border">
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <Users className="w-3.5 h-3.5" />
-                    <span><strong className="text-text-primary">{data?.active_kaders ?? 0}</strong> kader</span>
+                    <span>{t('trend.kaderStat', { n: data?.active_kaders ?? 0 })}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <Users className="w-3.5 h-3.5" />
-                    <span><strong className="text-text-primary">{data?.unique_patients?.toLocaleString('id-ID') ?? 0}</strong> pasien</span>
+                    <span>{t('trend.patientStat', { n: data?.unique_patients?.toLocaleString(localeOf(lang)) ?? 0 })}</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-text-secondary text-center py-8">Belum ada data global</p>
+              <p className="text-sm text-text-secondary text-center py-8">{t('trend.noGlobalData')}</p>
             )}
           </div>
 
           {/* ── Kondisi Terbanyak ── */}
           <div className="bg-surface rounded-xl p-4 border border-border mb-4">
-            <h2 className="text-sm font-semibold text-text-primary mb-3">Kondisi Terbanyak</h2>
+            <h2 className="text-sm font-semibold text-text-primary mb-3">{t('trend.topConditions')}</h2>
             {sortedConditions.length > 0 ? (
               <div className="space-y-2.5">
                 {sortedConditions.map(([label, count]) => {
@@ -296,7 +297,7 @@ export default function TrendPage() {
                   return (
                     <div key={label}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-text-primary truncate">{label}</span>
+                        <span className="text-xs font-medium text-text-primary truncate">{translateCondition(t, label)}</span>
                         <span className="text-xs font-semibold text-text-secondary shrink-0 ml-2">{count}x</span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -307,7 +308,7 @@ export default function TrendPage() {
                 })}
               </div>
             ) : (
-              <p className="text-sm text-text-secondary text-center py-6">Belum ada data kondisi</p>
+              <p className="text-sm text-text-secondary text-center py-6">{t('trend.noConditionData')}</p>
             )}
           </div>
 
@@ -316,7 +317,7 @@ export default function TrendPage() {
             <div className="bg-surface rounded-xl p-4 border border-border">
               <div className="flex items-center gap-2 mb-3">
                 <MapPin className="w-4 h-4 text-text-secondary" />
-                <h2 className="text-sm font-semibold text-text-primary">Puskesmas Teraktif</h2>
+                <h2 className="text-sm font-semibold text-text-primary">{t('trend.activePuskesmas')}</h2>
               </div>
               <div className="space-y-2.5">
                 {data.puskesmas_summary.slice(0, 8).map((p) => {
@@ -325,7 +326,7 @@ export default function TrendPage() {
                     <div key={p.id}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-text-primary truncate">{p.name}</span>
-                        <span className="text-xs text-text-secondary shrink-0 ml-2">{p.total} triase</span>
+                        <span className="text-xs text-text-secondary shrink-0 ml-2">{t('trend.triaseCount', { n: p.total })}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">

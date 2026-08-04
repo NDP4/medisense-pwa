@@ -8,12 +8,14 @@ import { usePathname } from 'next/navigation';
 import { syncManager } from '@/lib/sync';
 import { useTriageStore } from '@/store/triage-store';
 import { RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { useT } from '@/lib/i18n/use-t';
 
 /* ── PWA Layout — Shared shell with Bottom Nav ──────── */
 /* DESIGN.md §6.5 — Bottom Navigation fixed 64px         */
 
 export default function PWALayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { t } = useT();
   const isTriageResult = pathname === '/triage';
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
   const [isOnline, setIsOnline] = useState(true);
@@ -85,19 +87,19 @@ export default function PWALayout({ children }: { children: React.ReactNode }) {
         {syncStatus === 'syncing' && (
           <div className="flex items-center justify-center gap-2 bg-accent/10 py-1.5 text-xs text-accent">
             <RefreshCw className="w-3 h-3 animate-spin" />
-            <span>Menyinkronkan data...</span>
+            <span>{t('sync.syncing')}</span>
           </div>
         )}
         {!isOnline && (
           <div className="flex items-center justify-center gap-2 bg-yellow-50 py-1.5 text-xs text-yellow-700 border-b border-yellow-200">
             <WifiOff className="w-3 h-3" />
-            <span>Offline — data aman di perangkat</span>
+            <span>{t('sync.offline')}</span>
           </div>
         )}
         {isOnline && syncStatus === 'synced' && (
           <div className="flex items-center justify-center gap-2 bg-green-50 py-1.5 text-xs text-green-700">
             <Wifi className="w-3 h-3" />
-            <span>Tersinkronasi</span>
+            <span>{t('sync.synced')}</span>
           </div>
         )}
         {isOnline && syncStatus === 'error' && (
@@ -106,14 +108,14 @@ export default function PWALayout({ children }: { children: React.ReactNode }) {
             className="w-full flex items-center justify-center gap-2 bg-red-50 py-1.5 text-xs text-red-700 hover:bg-red-100 transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
-            <span>Sync gagal — ketuk untuk ulang</span>
+            <span>{t('sync.failed')}</span>
           </button>
         )}
       </div>
 
       {/* Main content area — transisi smooth antar halaman */}
       <main className={`pb-4 ${!isTriageResult ? 'pb-20' : ''} animate-fade-in`}>
-        <ErrorBoundary fallbackTitle="Gagal Memuat Halaman" fallbackMessage="Terjadi kesalahan saat memuat halaman ini. Silakan coba lagi.">
+        <ErrorBoundary fallbackTitle={t('errors.fallbackTitle')} fallbackMessage={t('errors.fallbackMessage')}>
           {children}
         </ErrorBoundary>
       </main>
