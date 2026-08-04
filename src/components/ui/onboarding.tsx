@@ -1,20 +1,21 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   Stethoscope,
   HeartPulse,
   Mic,
   BrainCircuit,
   ShieldCheck,
-  ChevronRight,
   ChevronLeft,
   Check,
+  MoveHorizontal,
 } from 'lucide-react';
 
 /* ── Onboarding 5 Layar untuk Kader Baru ─────────────── */
 /* DESIGN.md §1 — "Warna adalah bahasa pertama"          */
 /* F-09: Onboarding interaktif visual, mobile-first PWA  */
+/* Navigasi: swipe kiri/kanan + keyboard + dots          */
 
 interface OnboardingSlide {
   icon: typeof Stethoscope;
@@ -56,12 +57,16 @@ const SLIDES: OnboardingSlide[] = [
   },
 ];
 
+/** Ambang jarak swipe agar dianggap navigasi (px) */
+const SWIPE_THRESHOLD = 50;
+
 interface OnboardingProps {
   onComplete: () => void;
 }
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
   const [slideIndex, setSlideIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
   const slide = SLIDES[slideIndex];
   const isFirst = slideIndex === 0;
   const isLast = slideIndex === SLIDES.length - 1;
@@ -83,15 +88,61 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     setSlideIndex(idx);
   }, []);
 
+  // Swipe gesture — mulai sentuh
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null;
+  }, []);
+
+  // Swipe gesture — akhir sentuh: kiri = lanjut, kanan = kembali
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartX.current === null) return;
+      const deltaX = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
+      touchStartX.current = null;
+      if (deltaX < -SWIPE_THRESHOLD) handleNext();
+      else if (deltaX > SWIPE_THRESHOLD) handlePrev();
+    },
+    [handleNext, handlePrev],
+  );
+
+  // Keyboard navigation untuk aksesibilitas
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowRight') handleNext();
+      else if (e.key === 'ArrowLeft') handlePrev();
+    },
+    [handleNext, handlePrev],
+  );
+
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col safe-area-inset" role="dialog" aria-modal="true" aria-label="Pengenalan aplikasi">
-      {/* Skip button */}
+    <div
+      className="fixed inset-0 z-50 bg-white flex flex-col safe-area-inset"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Pengenalan aplikasi"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+    >
+      {/* Skip / Selesai button — berubah di slide terakhir */}
       <button
         type="button"
         onClick={onComplete}
-        className="absolute top-2 right-2 z-10 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+        className={`absolute top-2 right-2 z-10 flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+          isLast
+            ? 'bg-primary text-white rounded-full shadow-sm hover:opacity-90'
+            : 'text-text-secondary hover:text-text-primary'
+        }`}
       >
-        Lewati
+        {isLast ? (
+          <>
+            Selesai
+            <Check className="w-3.5 h-3.5" />
+          </>
+        ) : (
+          'Lewati'
+        )}
       </button>
 
       {/* Slide content — flex-1 pushes bottom controls down */}
@@ -141,39 +192,31 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           ))}
         </div>
 
-        {/* Navigation buttons */}
-        <div className="flex items-center gap-2">
-          {!isFirst && (
-            <button
-              type="button"
-              onClick={handlePrev}
-              aria-label="Langkah sebelumnya"
-              className="flex items-center justify-center gap-1 px-4 py-2.5 rounded-xl border border-border text-text-primary font-semibold text-sm hover:bg-gray-50 transition-colors flex-1"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Kembali
-            </button>
-          )}
+        {/* Swipe indicator — pengganti tombol "Selanjutnya" yang rawan tertutup */}
+        {isLast ? (
+          <div className="flex items-center justify-center gap-2 text-text-secondary">
+            <MoveHorizontal className="w-5 h-5 animate-pulse" />
+            <span className="text-xs font-medium">Geser ke kanan untuk melihat lagi</span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2 text-text-secondary">
+            <MoveHorizontal className="w-5 h-5 animate-pulse" />
+            <span className="text-xs font-medium">Geser untuk lanjut</span>
+          </div>
+        )}
 
+        {/* Kembali button — hanya untuk aksesibilitas (keyboard/mouse) */}
+        {!isFirst && (
           <button
             type="button"
-            onClick={handleNext}
-            className={`flex items-center justify-center gap-1 px-5 py-2.5 rounded-xl text-white font-semibold text-sm transition-all hover:opacity-90 flex-1 ${isFirst ? 'w-full' : ''}`}
-            style={{ backgroundColor: slide.color }}
+            onClick={handlePrev}
+            aria-label="Langkah sebelumnya"
+            className="flex items-center justify-center gap-1 mx-auto px-4 py-2 rounded-xl border border-border text-text-primary font-semibold text-sm hover:bg-gray-50 transition-colors"
           >
-            {isLast ? (
-              <>
-                Mulai
-                <Check className="w-4 h-4" />
-              </>
-            ) : (
-              <>
-                Selanjutnya
-                <ChevronRight className="w-4 h-4" />
-              </>
-            )}
+            <ChevronLeft className="w-4 h-4" />
+            Kembali
           </button>
-        </div>
+        )}
       </div>
     </div>
   );

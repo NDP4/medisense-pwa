@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   title: 'MediSense AI — Triase Dini',
   description:
     'Aplikasi triase dini berbasis AI untuk kader kesehatan di wilayah 3T Indonesia. 100% offline, real-time on-device inference.',
+  icons: {
+    icon: '/icon.svg',
+    apple: '/apple-icon.svg',
+  },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
