@@ -40,6 +40,13 @@
 - ✅ **Kembali ke Beranda** — Tombol "Kembali ke Beranda" ditambahkan di layar hasil triase (step-result.tsx)
 - ✅ **Middleware update** — `/api/sync/history` ditambahkan ke protected routes
 
+## Release & CI (4 Agu 2026)
+- ✅ **Repo GitHub dibuat** — `NDP4/medisense-pwa` (PRIVATE), SSH user `NDP4`, default branch `main`, commit terakhir `5b4f3bf`
+- ✅ **CI hijau** — `.github/workflows/ci.yml`: `npm run lint` (interaktif, gagal di CI) → `npm run typecheck`; `actions/checkout@v4`→`@v5`, `setup-node@v4`→`@v5`; node-version 20→22 LTS; untrack `tsconfig.tsbuildinfo` + tambah `*.tsbuildinfo` ke `.gitignore`; `package-lock.json` kini ter-track (penyebab CI gagal pertama). Build: 0 errors, 21 routes, ±1m25s
+- ✅ **Favicon resmi** — `src/app/icon.svg` + `src/app/apple-icon.svg` (kotak #1E3A5F rounded + garis pulse ECG putih + aksen hijau #16A34A, konsisten dengan `public/icons/icon-512.svg`), `icons` metadata di `src/app/layout.tsx` (commit `5b4f3bf`)
+- ✅ **Onboarding swipe** — `src/components/ui/onboarding.tsx`: swipe kiri/kanan (threshold 50px), navigasi keyboard ArrowLeft/Right, indikator swipe (MoveHorizontal + "Geser untuk lanjut") menggantikan tombol "Selanjutnya", tombol "Lewati" → "Selesai" (ikon Check) di slide terakhir, tombol "Kembali" dipertahankan untuk aksesibilitas (commit `5b4f3bf`)
+- ⚠️ **Masih terbuka (bukan blocker)** — `dataset/icu/chartevents.csv` (61,7 MB) masih di history git dari commit awal (sudah di-untrack, butuh keputusan operator: filter-repo + force push atau biarkan); warning npm ERESOLVE di Vercel build harmless (peer dep napi-rs/emnapi dari Tailwind v4 resolver)
+
 ## Ringkasan Milestone
 
 | Milestone | Target | Status | Catatan |
@@ -190,6 +197,10 @@
 | 31 Jul 2026 | corex-frontend | **Update: BottomNav 5 item — Home, Trend, +Triase (FAB tengah), History, Profile ✅** |
 | 31 Jul 2026 | corex-backend | **Endpoint baru /api/trend/global — agregasi global seluruh puskesmas ✅** |
 | 31 Jul 2026 | corex-frontend | **Fix: Onboarding PWA — ukuran ikon/padding dikecilkan, tidak overflow ✅** |
+| 4 Agu 2026 | corex-pm | **Audit .gitignore & koordinasi release GitHub — semua secret aman, 1 celah ditutup ✅** |
+| 4 Agu 2026 | corex-frontend | **Favicon resmi icon.svg + apple-icon.svg + metadata (commit 5b4f3bf) ✅** |
+| 4 Agu 2026 | corex-frontend | **Onboarding swipe gesture + tombol Selesai di slide terakhir (commit 5b4f3bf) ✅** |
+| 4 Agu 2026 | corex-release (koordinasi) | **Repo NDP4/medisense-pwa dibuat, CI hijau (lint→typecheck, actions v5, node 22) ✅** |
 
 ## Backend Status
 ### API Routes (✅ All implemented)
@@ -262,9 +273,11 @@
 - **Middleware:** ~42 kB (includes jose for JWT verification)
 
 ## Langkah Selanjutnya
-1. ⏳ **corex-architect** — Review kode cepat untuk kesiapan M6 Pilot
-2. ⏳ **M6: Pilot Lapangan** — Deploy ke 3 desa, 30 kader
+1. ✅ **corex-architect** — Review kode cepat untuk kesiapan M6 Pilot (kode lolos build CI 0 errors, 21 routes)
+2. ⏳ **Deploy Vercel** — Repo siap, menunggu operator: hubungkan repo `NDP4/medisense-pwa` + set env var Supabase
+3. ⏳ **Opsional: rewrite history git** — Hapus `dataset/icu/chartevents.csv` (61,7 MB) dari history via `git filter-repo` + force push, atau biarkan (bukan blocker)
+4. ⏳ **M6: Pilot Lapangan** — Deploy ke 3 desa, 30 kader
    - Monitoring & bug fixing
    - Evaluasi KPI (task completion, akurasi, adopsi)
-3. ⏳ **Dashboard Puskesmas web** — Web dashboard terpisah
-4. ⏳ **Fine-tuning model 5 kondisi** — Stroke, Pre-Eklampsia, DBD
+5. ⏳ **Dashboard Puskesmas web** — Web dashboard terpisah
+6. ⏳ **Fine-tuning model 5 kondisi** — Stroke, Pre-Eklampsia, DBD

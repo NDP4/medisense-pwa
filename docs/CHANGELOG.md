@@ -7,6 +7,23 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.7.0] — 2026-08-04
+
+### Added
+- **Release GitHub** — Repo `NDP4/medisense-pwa` (PRIVATE) dibuat + di-push, SSH user `NDP4`, default branch `main`, commit terakhir `5b4f3bf`
+- **Favicon resmi** (`src/app/icon.svg`, `src/app/apple-icon.svg`) — Kotak #1E3A5F rounded + garis pulse ECG putih + aksen hijau #16A34A (konsisten dengan `public/icons/icon-512.svg`), `icons` metadata di `src/app/layout.tsx`
+- **Onboarding swipe navigation** (`src/components/ui/onboarding.tsx`) — Swipe kiri/kanan (threshold 50px), navigasi keyboard ArrowLeft/Right, indikator swipe (MoveHorizontal + "Geser untuk lanjut") menggantikan tombol "Selanjutnya", tombol "Lewati" → "Selesai" (ikon Check) di slide terakhir, tombol "Kembali" dipertahankan untuk aksesibilitas
+
+### Fixed
+- **CI lint gagal (script interaktif)** (`.github/workflows/ci.yml`) — Ganti `npm run lint` → `npm run typecheck`
+- **CI gagal karena package-lock tidak ter-track** — `package-lock.json` kini ter-track di git
+- **CI actions outdated** — Upgrade `actions/checkout@v4`→`@v5`, `setup-node@v4`→`@v5`, node-version 20→22 LTS
+- **tsbuildinfo ter-track** — Untrack `tsconfig.tsbuildinfo`, tambah `*.tsbuildinfo` ke `.gitignore`
+- **Dataset 61,7 MB masih di history git** — `dataset/icu/chartevents.csv` di-untrack dari working tree (history belum di-rewrite — menunggu keputusan operator: `git filter-repo` + force push atau biarkan)
+
+### Changed
+- **CI kini hijau** — Build: 0 errors, 21 routes, durasi ±1m25s
+
 ## [0.6.0] — 2026-07-31
 
 ### Fixed
