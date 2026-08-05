@@ -7,6 +7,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.8.1] — 2026-08-05
+
+### Fixed
+- **Voice text dobel saat online (Chrome Android)** (`src/lib/voice.ts`) — Transkripsi Web Speech API di-`+=` ke `finalText` dengan loop mulai dari `event.resultIndex`. Chrome Android mengirim ulang hasil final dengan `resultIndex` yang di-reset saat recognition restart → teks di-append dua kali ("demam demam"). Fix: teks penuh di-rebuild dari `event.results` (kumulatif) setiap event — hasil selalu konsisten apa pun perilaku `resultIndex`.
+- **Alur unduh model suara (Vosk) terbalik** (`src/components/triage/step-voice.tsx`) — Tombol unduh model hanya muncul di error box yang terjadi saat OFFLINE (padahal unduh butuh internet), dan tidak pernah muncul saat ONLINE. Sekarang logika bisnisnya benar: panel "Mode Offline" selalu tampil selama model belum terunduh — saat online menampilkan tombol "Unduh Model Suara (~22MB)" (persiapan sekali, lalu model dipakai offline), saat offline menampilkan notice "Perlu koneksi internet". Badge hijau "Model suara siap" muncul setelah terunduh.
+- **`navigator.onLine` di render** (`src/components/triage/step-voice.tsx`) — Dibaca langsung di JSX (risiko hydration mismatch, tidak reaktif) → diganti state `isOnline` reaktif (event `online`/`offline`), konsisten dengan pola anti-hydration-error yang sudah dipakai di project.
+
+### Added
+- **Nama pasien di modal detail triase** (`src/store/triage-store.ts`, `src/components/triage/triage-detail-modal.tsx`) — `TriageResult` kini punya field opsional `patientName` (HANYA dari perangkat: diisi di `finishAnalysis` dari `selectedPatient` dan di `loadHistory` dari record IndexedDB terdekripsi; cloud tetap anonim). Modal detail menampilkan nama pasien (ikon User) di bawah level, di atas waktu. Fallback `'Unknown'` dari record lama disembunyikan.
+- **i18n** (`src/lib/i18n/translations.ts`) — 4 key baru di namespace `voice` (ID + EN): `modelTitle`, `modelDesc`, `needOnline`, `modelReady`.
+
+### Verified
+- Typecheck 0 error, build 0 errors (21 routes).
+
 ## [0.8.0] — 2026-08-05
 
 ### Added

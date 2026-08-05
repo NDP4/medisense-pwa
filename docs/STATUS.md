@@ -53,6 +53,17 @@
 - ✅ **syncPendingDexieRecords conditions fixed** — payload `conditions: []` ditolak validasi API (zod min(1)) → sekarang kirim kondisi parsed dari record lokal dengan fallback `tidak_ada`
 - ✅ **Terverifikasi** — simulasi logika: skenario bug lama menghasilkan 3 (reproduksi), skenario baru menghasilkan 1; typecheck 0 error, build 0 errors, 21 routes
 
+## Fixes: Voice Double Text & Alur Unduh Model (5 Agu 2026)
+- ✅ **Voice text dobel saat online (Chrome Android) fixed** — `src/lib/voice.ts`: transkripsi di-`+=` ke `finalText` dengan loop dari `event.resultIndex`; Chrome Android mengirim ulang hasil final dengan `resultIndex` reset saat restart → append dobel. Sekarang teks penuh di-rebuild dari `event.results` (kumulatif) setiap event
+- ✅ **Alur unduh model Vosk dibalik** — `src/components/triage/step-voice.tsx`: tombol unduh sebelumnya HANYA muncul di error box saat offline (mustahil bisa unduh). Logika bisnis baru: panel "Mode Offline" selalu tampil selama model belum terunduh → **online**: tombol "Unduh Model Suara (~22MB)" (unduh sekali, model tersimpan & siap offline); **offline**: notice "Perlu koneksi internet"; setelah terunduh: badge hijau "Model suara siap"
+- ✅ **`navigator.onLine` di JSX fixed** — diganti state `isOnline` reaktif (listener online/offline), menghilangkan risiko hydration mismatch
+- ✅ **i18n** — 4 key baru di namespace `voice` (ID+EN): `modelTitle`, `modelDesc`, `needOnline`, `modelReady`
+
+## Fitur: Nama Pasien di Modal Detail (5 Agu 2026)
+- ✅ **`TriageResult.patientName`** — `src/store/triage-store.ts`: field baru, diisi di `finishAnalysis` dari `selectedPatient` dan di `loadHistory` dari record IndexedDB terdekripsi (fallback `'Unknown'` record lama disembunyikan). Cloud tetap anonim — nama pasien hanya tampil dari perangkat
+- ✅ **Modal detail menampilkan nama pasien** — `src/components/triage/triage-detail-modal.tsx`: nama (ikon User) tampil di bawah level triase, di atas waktu
+- ✅ Terverifikasi: typecheck 0 error, build 0 errors, 21 routes
+
 ## Release & CI (4 Agu 2026)
 - ✅ **Repo GitHub dibuat** — `NDP4/medisense-pwa` (PRIVATE), SSH user `NDP4`, default branch `main`, commit terakhir `5b4f3bf`
 - ✅ **CI hijau** — `.github/workflows/ci.yml`: `npm run lint` (interaktif, gagal di CI) → `npm run typecheck`; `actions/checkout@v4`→`@v5`, `setup-node@v4`→`@v5`; node-version 20→22 LTS; untrack `tsconfig.tsbuildinfo` + tambah `*.tsbuildinfo` ke `.gitignore`; `package-lock.json` kini ter-track (penyebab CI gagal pertama). Build: 0 errors, 21 routes, ±1m25s
@@ -217,6 +228,8 @@
 | 5 Agu 2026 | corex-frontend | **Fitur: Bahasa global ID/EN — language switcher di beranda & profil, semua UI diterjemahkan (commit ccfbc22) ✅** |
 | 5 Agu 2026 | corex-backend | **Fix: duplikasi riwayat triase (2 lokal + 1 cloud = 3) — single-write, dedup by id, auto-cleanup duplikat lama ✅** |
 | 5 Agu 2026 | corex-frontend | **Fitur: Modal detail triase di History — ketuk kartu, tampil level/kondisi/confidence/voice/rekomendasi (i18n ID+EN) ✅** |
+| 5 Agu 2026 | corex-backend | **Fix: voice double text online (rebuild dari event.results) + alur unduh model Vosk dibalik (tombol saat online, notice saat offline, badge siap) ✅** |
+| 5 Agu 2026 | corex-backend | **Fitur: Nama pasien di modal detail triase — TriageResult.patientName (lokal saja, cloud tetap anonim) ✅** |
 
 ## Backend Status
 ### API Routes (✅ All implemented)
