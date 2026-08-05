@@ -48,6 +48,7 @@ export interface TriageResult {
   conditions: TriageCondition[];
   recommendations: string[];
   timestamp: string;
+  voiceText?: string; // transkrip keluhan suara (opsional)
 }
 
 export type TriageStep = 1 | 2 | 3 | 4 | 5;
@@ -277,7 +278,12 @@ export const useTriageStore = create<TriageState>((set, get) => ({
   finishAnalysis: (result) => {
     // Ikat hasil dengan triageSessionId agar bisa di-dedup terhadap cloud
     const sessionId = get().triageSessionId;
-    const finalResult = sessionId ? { ...result, id: sessionId } : result;
+    const voice = get().voiceText;
+    const finalResult = {
+      ...result,
+      ...(sessionId ? { id: sessionId } : {}),
+      ...(voice ? { voiceText: voice } : {}),
+    };
 
     set({
       isAnalyzing: false,
@@ -362,6 +368,7 @@ export const useTriageStore = create<TriageState>((set, get) => ({
           conditions,
           recommendations: getRecommendations(level, conditionStrings),
           timestamp: h.createdAt,
+          voiceText: h.voiceText || undefined,
         };
       });
 
@@ -481,6 +488,7 @@ export const useTriageStore = create<TriageState>((set, get) => ({
           conditions,
           recommendations: getRecommendations(level, conditionStrings),
           timestamp: h.triage_completed_at || h.triage_started_at || new Date().toISOString(),
+          voiceText: h.voice_text || undefined,
         };
       });
 

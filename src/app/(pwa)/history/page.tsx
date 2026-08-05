@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ClipboardList, RefreshCw } from 'lucide-react';
-import { useTriageStore } from '@/store/triage-store';
+import { ClipboardList, RefreshCw, ChevronRight } from 'lucide-react';
+import { useTriageStore, type TriageResult } from '@/store/triage-store';
 import { useT, translateCondition, translateRecommendations, localeOf } from '@/lib/i18n/use-t';
+import TriageDetailModal from '@/components/triage/triage-detail-modal';
 
 /* ── History Page ─────────────────────────────────────── */
 /* DESIGN.md §9.2 — Empty state: clipboard kosong          */
+/* Ketuk kartu → modal detail triase (triage-detail-modal)  */
 
 const LEVEL_STYLES: Record<string, { border: string; bg: string; dot: string; text: string }> = {
   hijau: { border: '#16A34A', bg: '#DCFCE7', dot: '#16A34A', text: '#166534' },
@@ -19,6 +21,7 @@ export default function HistoryPage() {
   const { history, fetchHistoryFromCloud } = useTriageStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<TriageResult | null>(null);
 
   // Fetch history from cloud on mount
   useEffect(() => {
@@ -101,9 +104,11 @@ export default function HistoryPage() {
             });
 
             return (
-              <div
-                key={idx}
-                className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-border"
+              <button
+                key={item.id ?? idx}
+                type="button"
+                onClick={() => setSelectedItem(item)}
+                className="w-full flex items-start gap-3 p-4 rounded-xl bg-surface border border-border text-left hover:bg-muted/50 active:scale-[0.99] transition-all touch-target"
                 style={{ borderLeft: `4px solid ${style.border}` }}
               >
                 <div
@@ -132,11 +137,15 @@ export default function HistoryPage() {
                     ))}
                   </ul>
                 </div>
-              </div>
+                <ChevronRight className="w-4 h-4 text-text-secondary/40 shrink-0 mt-1" aria-hidden="true" />
+              </button>
             );
           })}
         </div>
       )}
+
+      {/* Modal detail triase */}
+      <TriageDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
     </div>
   );
 }
