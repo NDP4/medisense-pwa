@@ -40,6 +40,13 @@
 - ✅ **Kembali ke Beranda** — Tombol "Kembali ke Beranda" ditambahkan di layar hasil triase (step-result.tsx)
 - ✅ **Middleware update** — `/api/sync/history` ditambahkan ke protected routes
 
+## Fixes: Duplikasi Riwayat Triase (5 Agu 2026)
+- ✅ **Double-write ke IndexedDB fixed** — `step-analyze.tsx` menyimpan record "audit" dengan id acak, lalu `addToHistory` menyimpan lagi dengan `triageSessionId` → 1 triase = 2 record lokal. Sekarang penyimpanan tunggal lewat `addToHistory` (audit trail tetap di console)
+- ✅ **Dedup by timestamp → dedup by id** — `fetchHistoryFromCloud` sebelumnya mendedup dengan string timestamp yang selalu berbeda milidetik (lokal vs cloud) sehingga 2 lokal + 1 cloud = 3 di riwayat. Sekarang `TriageResult` punya `id` (triageSessionId) dan merge cloud dilakukan by id
+- ✅ **Auto-cleanup duplikat lama** — `loadHistory` mendeteksi record id non-UUID (artefak bug lama) yang punya kembaran UUID dengan level & waktu sama (±10 detik) → dihapus dari IndexedDB (fire-and-forget); record yatim tetap dipertahankan (tidak ada data hilang)
+- ✅ **syncPendingDexieRecords conditions fixed** — payload `conditions: []` ditolak validasi API (zod min(1)) → sekarang kirim kondisi parsed dari record lokal dengan fallback `tidak_ada`
+- ✅ **Terverifikasi** — simulasi logika: skenario bug lama menghasilkan 3 (reproduksi), skenario baru menghasilkan 1; typecheck 0 error, build 0 errors, 21 routes
+
 ## Release & CI (4 Agu 2026)
 - ✅ **Repo GitHub dibuat** — `NDP4/medisense-pwa` (PRIVATE), SSH user `NDP4`, default branch `main`, commit terakhir `5b4f3bf`
 - ✅ **CI hijau** — `.github/workflows/ci.yml`: `npm run lint` (interaktif, gagal di CI) → `npm run typecheck`; `actions/checkout@v4`→`@v5`, `setup-node@v4`→`@v5`; node-version 20→22 LTS; untrack `tsconfig.tsbuildinfo` + tambah `*.tsbuildinfo` ke `.gitignore`; `package-lock.json` kini ter-track (penyebab CI gagal pertama). Build: 0 errors, 21 routes, ±1m25s
@@ -201,6 +208,8 @@
 | 4 Agu 2026 | corex-frontend | **Favicon resmi icon.svg + apple-icon.svg + metadata (commit 5b4f3bf) ✅** |
 | 4 Agu 2026 | corex-frontend | **Onboarding swipe gesture + tombol Selesai di slide terakhir (commit 5b4f3bf) ✅** |
 | 4 Agu 2026 | corex-release (koordinasi) | **Repo NDP4/medisense-pwa dibuat, CI hijau (lint→typecheck, actions v5, node 22) ✅** |
+| 5 Agu 2026 | corex-frontend | **Fitur: Bahasa global ID/EN — language switcher di beranda & profil, semua UI diterjemahkan (commit ccfbc22) ✅** |
+| 5 Agu 2026 | corex-backend | **Fix: duplikasi riwayat triase (2 lokal + 1 cloud = 3) — single-write, dedup by id, auto-cleanup duplikat lama ✅** |
 
 ## Backend Status
 ### API Routes (✅ All implemented)

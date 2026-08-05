@@ -7,6 +7,22 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.7.1] — 2026-08-05
+
+### Fixed
+- **Duplikasi riwayat triase** — 1 triase tampil 2x di perangkat dan 3x di riwayat (saat online). Akar masalah:
+  - **Double-write ke IndexedDB** (`src/components/triage/step-analyze.tsx`) — step analisis menyimpan record "audit trail" dengan id acak, lalu `addToHistory` di store menyimpan lagi dengan `triageSessionId` → 2 record lokal per triase. Sekarang penyimpanan tunggal lewat `addToHistory` (audit trail tetap tercatat di console).
+  - **Dedup by timestamp yang tidak pernah cocok** (`src/store/triage-store.ts`) — timestamp lokal (2 nilai berbeda milidetik) vs cloud (`triage_completed_at`) selalu berbeda, sehingga 2 lokal + 1 cloud = 3 entri di riwayat. `TriageResult` kini punya field `id` (triageSessionId) dan merge cloud dilakukan **by id**.
+  - **Auto-cleanup duplikat lama** — `loadHistory` menghapus record id non-UUID (artefak bug lama) yang punya kembaran UUID dengan level & waktu sama (±10 detik) dari IndexedDB (fire-and-forget); record yatim tetap dipertahankan agar tidak ada data hilang.
+  - **`syncPendingDexieRecords` payload invalid** (`src/lib/sync.ts`) — `conditions: []` ditolak validasi API (zod `min(1)`) → sekarang mengirim kondisi hasil parse record lokal dengan fallback `tidak_ada`.
+
+### Changed
+- **`TriageResult`** (`src/store/triage-store.ts`) — Tambah field opsional `id` untuk dedup lokal↔cloud.
+- **Cloud history merge** (`fetchHistoryFromCloud`) — dedup berdasarkan `id` (triage_id) bukan timestamp.
+
+### Verified
+- Simulasi logika: skenario bug lama mereproduksi 3 entri; skenario baru menghasilkan 1 entri. Typecheck 0 error, build 0 errors (21 routes).
+
 ## [0.7.0] — 2026-08-04
 
 ### Added
