@@ -40,8 +40,14 @@
 - ✅ **Kembali ke Beranda** — Tombol "Kembali ke Beranda" ditambahkan di layar hasil triase (step-result.tsx)
 - ✅ **Middleware update** — `/api/sync/history` ditambahkan ke protected routes
 
-## Fixes: Duplikasi Riwayat Triase (5 Agu 2026)
-- ✅ **Double-write ke IndexedDB fixed** — `step-analyze.tsx` menyimpan record "audit" dengan id acak, lalu `addToHistory` menyimpan lagi dengan `triageSessionId` → 1 triase = 2 record lokal. Sekarang penyimpanan tunggal lewat `addToHistory` (audit trail tetap di console)
+## Fitur: Detail Triase Modal (5 Agu 2026)
+- ✅ **Modal detail triase** — `src/components/triage/triage-detail-modal.tsx`: ketuk kartu di halaman History → modal menampilkan level triase (ikon + warna sesuai level), waktu lengkap, kondisi terdeteksi + confidence %, catatan suara (voice text kalau ada), dan daftar rekomendasi lengkap
+- ✅ **Kartu history jadi tombol** — `src/app/(pwa)/history/page.tsx`: card bisa ditekan (accessibility: button asli, focus, keyboard), ada indikator chevron "Lihat detail"; key pakai `item.id` (stabil) bukan index
+- ✅ **voiceText di TriageResult** — `src/store/triage-store.ts`: field `voiceText` ditambahkan ke `TriageResult` (diisi dari Dexie & cloud) supaya catatan suara bisa tampil di detail
+- ✅ **i18n lengkap** — 8 key baru di namespace `history` (ID + EN): detailTitle, detailTime, detailConditions, detailNoConditions, detailRecommendations, detailVoice, detailClose, detailHint
+- ✅ Terverifikasi: typecheck 0 error, build 0 errors, 21 routes
+
+## Fixes: Duplikasi Riwayat Triase (5 Agu 2026)- ✅ **Double-write ke IndexedDB fixed** — `step-analyze.tsx` menyimpan record "audit" dengan id acak, lalu `addToHistory` menyimpan lagi dengan `triageSessionId` → 1 triase = 2 record lokal. Sekarang penyimpanan tunggal lewat `addToHistory` (audit trail tetap di console)
 - ✅ **Dedup by timestamp → dedup by id** — `fetchHistoryFromCloud` sebelumnya mendedup dengan string timestamp yang selalu berbeda milidetik (lokal vs cloud) sehingga 2 lokal + 1 cloud = 3 di riwayat. Sekarang `TriageResult` punya `id` (triageSessionId) dan merge cloud dilakukan by id
 - ✅ **Auto-cleanup duplikat lama** — `loadHistory` mendeteksi record id non-UUID (artefak bug lama) yang punya kembaran UUID dengan level & waktu sama (±10 detik) → dihapus dari IndexedDB (fire-and-forget); record yatim tetap dipertahankan (tidak ada data hilang)
 - ✅ **syncPendingDexieRecords conditions fixed** — payload `conditions: []` ditolak validasi API (zod min(1)) → sekarang kirim kondisi parsed dari record lokal dengan fallback `tidak_ada`
@@ -210,6 +216,7 @@
 | 4 Agu 2026 | corex-release (koordinasi) | **Repo NDP4/medisense-pwa dibuat, CI hijau (lint→typecheck, actions v5, node 22) ✅** |
 | 5 Agu 2026 | corex-frontend | **Fitur: Bahasa global ID/EN — language switcher di beranda & profil, semua UI diterjemahkan (commit ccfbc22) ✅** |
 | 5 Agu 2026 | corex-backend | **Fix: duplikasi riwayat triase (2 lokal + 1 cloud = 3) — single-write, dedup by id, auto-cleanup duplikat lama ✅** |
+| 5 Agu 2026 | corex-frontend | **Fitur: Modal detail triase di History — ketuk kartu, tampil level/kondisi/confidence/voice/rekomendasi (i18n ID+EN) ✅** |
 
 ## Backend Status
 ### API Routes (✅ All implemented)

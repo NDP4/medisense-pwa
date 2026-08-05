@@ -7,6 +7,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.8.0] — 2026-08-05
+
+### Added
+- **Modal detail triase** (`src/components/triage/triage-detail-modal.tsx`) — Ketuk kartu di halaman History membuka modal detail yang menampilkan: level triase (ikon + warna sesuai level), waktu lengkap, kondisi terdeteksi beserta confidence %, catatan suara (voice text jika ada), dan daftar rekomendasi lengkap. Menggunakan komponen `Modal` yang sudah ada (focus trap, Escape, backdrop, a11y).
+- **Kartu history interaktif** (`src/app/(pwa)/history/page.tsx`) — Card diubah dari `div` menjadi `button` (accessible, bisa di-focus & di-enter via keyboard), dengan ikon chevron sebagai affordance "Lihat detail"; React key kini memakai `item.id` (stabil) dengan fallback index.
+- **`voiceText` di `TriageResult`** (`src/store/triage-store.ts`) — Field baru diisi dari IndexedDB (`loadHistory`) dan cloud (`fetchHistoryFromCloud`), sehingga catatan suara tampil di modal detail.
+
+### Changed
+- **i18n** (`src/lib/i18n/translations.ts`) — 8 key baru di namespace `history` (ID + EN): `detailHint`, `detailTitle`, `detailTime`, `detailConditions`, `detailNoConditions`, `detailRecommendations`, `detailVoice`, `detailClose`.
+
+### Verified
+- Typecheck 0 error, build 0 errors (21 routes).
+
 ## [0.7.1] — 2026-08-05
 
 ### Fixed
