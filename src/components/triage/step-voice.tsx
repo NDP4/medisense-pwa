@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, SkipForward, ChevronDown, Check, Loader2, AlertCircle, Download } from 'lucide-react';
+import { Mic, SkipForward, ChevronDown, Check, Loader2, AlertCircle, Download, WifiOff } from 'lucide-react';
 import ProgressStepper from '@/components/ui/progress-stepper';
 import { useTriageStore } from '@/store/triage-store';
 import voiceService from '@/lib/voice';
@@ -32,6 +32,8 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
   const [micPermission, setMicPermission] = useState<boolean | null>(null);
   const [voskStatus, setVoskStatus] = useState<{ downloaded: boolean; sizeMB: number } | null>(null);
   const [isDownloadingModel, setIsDownloadingModel] = useState(false);
+  // Reaktif terhadap status jaringan (hydration-safe: jangan baca navigator.onLine di render)
+  const [isOnline, setIsOnline] = useState(true);
   const resultUnsubscribe = useRef<(() => void) | null>(null);
   const stateUnsubscribe = useRef<(() => void) | null>(null);
   const errorUnsubscribe = useRef<(() => void) | null>(null);
@@ -39,6 +41,18 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
   useEffect(() => {
     voiceService.checkMicrophonePermission().then(setMicPermission);
     setVoskStatus(voiceService.getVoskModelStatus());
+  }, []);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   useEffect(() => {
@@ -88,7 +102,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
       setEngineCode('');
 
       const engine = voiceService.getBestEngine();
-      if (engine === 'none' && !navigator.onLine) {
+      if (engine === 'none' && !isOnline) {
         if (voskStatus && !voskStatus.downloaded) {
           setError('Mode offline: unduh model suara terlebih dahulu');
           return;
@@ -99,7 +113,7 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
     } catch (err) {
       setError(`Gagal memulai rekaman: ${(err as Error).message}`);
     }
-  }, [isRecording, micPermission, selectedLang, voskStatus]);
+  }, [isRecording, micPermission, selectedLang, voskStatus, isOnline]);
 
   const handleUseText = useCallback(() => {
     const text = transcription || manualText.trim();
@@ -232,7 +246,9 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
             <AlertCircle className="w-5 h-5 text-merah mt-0.5 shrink-0" />
             <div className="flex-1">
               <p className="text-sm text-red-800">{translateErrorMessage(t, error)}</p>
-              {error.includes('unduh model') && (
+              {/* Tombol unduh model hanya berguna saat online — saat offline,
+                  notice manajemen model di bawah yang memberi penjelasan */}
+              {error.includes('unduh model') && isOnline && (
                 <button
                   onClick={handleDownloadModel}
                   disabled={isDownloadingModel}
@@ -251,13 +267,41 @@ export default function StepVoice({ onNext, onSkip }: { onNext: () => void; onSk
         </div>
       )}
 
-      {voskStatus && !voskStatus.downloaded && !navigator.onLine && (
-        <div className="mb-6 p-3 rounded-xl bg-yellow-50 border border-yellow-200">
-          <p className="text-xs text-yellow-800">
-            {t('voice.offlineNotice', { size: voskStatus.sizeMB })}
-          </p>
-        </div>
-      )}
+      {/* Manajemen model suara offline — selalu terlihat, apa pun status jaringan.
+          Unduhan butuh internet (persiapan saat online), lalu model dipakai offline. */}
+      {voskStatus &&
+        (voskStatus.downloaded ? (
+          <div className="mb-6 p-3 rounded-xl bg-green-50 border border-green-200 flex items-center gap-2">
+            <Check className="w-4 h-4 text-green-700 shrink-0" />
+            <p className="text-xs text-green-800">{t('voice.modelReady')}</p>
+          </div>
+        ) : (
+          <div className="mb-6 p-4 rounded-xl bg-yellow-50 border border-yellow-200">
+            <p className="text-sm font-semibold text-yellow-800">{t('voice.modelTitle')}</p>
+            <p className="text-xs text-yellow-800 mt-1">
+              {t('voice.modelDesc', { size: voskStatus.sizeMB })}
+            </p>
+            {isOnline ? (
+              <button
+                onClick={handleDownloadModel}
+                disabled={isDownloadingModel}
+                className="mt-3 w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all touch-target"
+              >
+                {isDownloadingModel ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {isDownloadingModel ? t('voice.downloading') : t('voice.downloadModel', { size: voskStatus.sizeMB })}
+              </button>
+            ) : (
+              <p className="mt-3 flex items-center gap-2 text-xs font-medium text-yellow-800">
+                <WifiOff className="w-4 h-4 shrink-0" />
+                {t('voice.needOnline')}
+              </p>
+            )}
+          </div>
+        ))}
 
       <div className="mb-6">
         <label className="block text-sm font-medium text-text-primary mb-2">

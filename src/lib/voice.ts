@@ -184,8 +184,14 @@ class VoiceService {
         }
       }, SILENCE_TIMEOUT_MS);
 
+      // Rebuild full transcript from the cumulative result list on EVERY
+      // event instead of appending from event.resultIndex. Some browsers
+      // (Chrome Android) re-send finalized results with a reset resultIndex
+      // when continuous recognition restarts — appending caused duplicated
+      // text ("demam demam").
+      let finalText = '';
       let interimText = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
           finalText += transcript;
@@ -194,11 +200,11 @@ class VoiceService {
         }
       }
 
-      const currentText = finalText + interimText;
-      if (currentText.trim()) {
+      const currentText = (finalText + ' ' + interimText).trim();
+      if (currentText) {
         this.resultListeners.forEach((fn) =>
           fn({
-            text: currentText.trim(),
+            text: currentText,
             engine: 'web-speech',
             durationMs: Date.now() - startTime,
           })
