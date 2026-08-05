@@ -290,6 +290,25 @@ class SyncManager {
       let synced = 0;
       for (const record of unsynced) {
         try {
+          // Parse conditions dari record lokal; fallback ke kondisi default
+          // (validasi API menolak array kosong — zod min(1))
+          const level = record.triageLevel as 'hijau' | 'kuning' | 'merah';
+          let conditions: TriageSyncData['conditions'] = [
+            { condition: 'tidak_ada', confidence: 0, triage_level: level },
+          ];
+          try {
+            const parsed = JSON.parse(record.conditions || '[]');
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              conditions = parsed.map((c: string) => ({
+                condition: c,
+                confidence: 0,
+                triage_level: level,
+              }));
+            }
+          } catch {
+            // fallback ke default
+          }
+
           const response = await fetch('/api/sync/triage', {
             method: 'POST',
             headers: {
@@ -304,7 +323,7 @@ class SyncManager {
               patient_age: record.patientAge,
               patient_gender: record.patientGender,
               triage_level: record.triageLevel,
-              conditions: [],
+              conditions,
               triage_started_at: record.createdAt,
               triage_completed_at: record.createdAt,
               model_version: record.modelVersion,

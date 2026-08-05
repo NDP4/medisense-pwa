@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { saveTriageSession, getDecryptedHistory } from '@/lib/db';
+import db, { saveTriageSession, getDecryptedHistory } from '@/lib/db';
 
 /* ── Triage Zustand Store ───────────────────────────── */
 /* Mengelola state keseluruhan alur triase 5 langkah      */
@@ -42,6 +42,7 @@ export interface TriageCondition {
 }
 
 export interface TriageResult {
+  id?: string; // triageSessionId — dipakai untuk dedup antara lokal & cloud
   triageLevel: 'hijau' | 'kuning' | 'merah';
   triageLabel: string;
   conditions: TriageCondition[];
@@ -274,13 +275,17 @@ export const useTriageStore = create<TriageState>((set, get) => ({
   setAnalysisProgress: (progress) => set({ analysisProgress: progress }),
 
   finishAnalysis: (result) => {
+    // Ikat hasil dengan triageSessionId agar bisa di-dedup terhadap cloud
+    const sessionId = get().triageSessionId;
+    const finalResult = sessionId ? { ...result, id: sessionId } : result;
+
     set({
       isAnalyzing: false,
       analysisProgress: 100,
-      result,
+      result: finalResult,
       currentStep: 5,
     });
-    get().addToHistory(result);
+    get().addToHistory(finalResult);
   },
 
   // ── Sync ──
@@ -314,7 +319,7 @@ export const useTriageStore = create<TriageState>((set, get) => ({
     const state = get();
     const patient = state.selectedPatient;
     saveTriageSession({
-      id: state.triageSessionId || uuidv4(),
+      id: result.id || state.triageSessionId || uuidv4(),
       patientName: patient?.name || 'Unknown',
       patientAge: patient?.age || 0,
       patientGender: patient?.gender ?? 0,
@@ -330,7 +335,7 @@ export const useTriageStore = create<TriageState>((set, get) => ({
   loadHistory: async () => {
     try {
       const records = await getDecryptedHistory();
-      const history: TriageResult[] = records.map(h => {
+      const all: TriageResult[] = records.map(h => {
         const level = h.triageLevel as 'hijau' | 'kuning' | 'merah';
         // Parse conditions from JSON string stored in IndexedDB
         let conditionStrings: string[] = [];
@@ -351,6 +356,7 @@ export const useTriageStore = create<TriageState>((set, get) => ({
           triageLevel: level,
         }));
         return {
+          id: h.id,
           triageLevel: level,
           triageLabel: getTriageLabel(level),
           conditions,
@@ -358,7 +364,40 @@ export const useTriageStore = create<TriageState>((set, get) => ({
           timestamp: h.createdAt,
         };
       });
-      set({ history });
+
+      // Cleanup duplikat dari bug double-write (deploy sebelumnya):
+      // record "audit" lama ber-id non-UUID (timestamp-random6) yang punya
+      // kembaran record asli ber-id UUID (triageSessionId) dengan level &
+      // waktu (±10 detik) yang sama → hapus agar tidak muncul dobel di riwayat.
+      const isUuid = (id: string) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      const twinsToDelete: string[] = [];
+      const history = all.filter((r) => {
+        if (isUuid(r.id || '')) return true;
+        const ts = Date.parse(r.timestamp);
+        const hasTwin = all.some((other) =>
+          other.id &&
+          isUuid(other.id) &&
+          other.triageLevel === r.triageLevel &&
+          Math.abs(Date.parse(other.timestamp) - ts) < 10000
+        );
+        if (hasTwin && r.id) {
+          twinsToDelete.push(r.id);
+          return false;
+        }
+        return true;
+      });
+
+      // Hapus duplikat dari IndexedDB (fire-and-forget, jangan blokir render)
+      if (twinsToDelete.length > 0) {
+        Promise.all(
+          twinsToDelete.map((id) => db.triageSessions.delete(id))
+        ).catch((err) =>
+          console.warn('[TriageStore] Failed to clean duplicate records:', err)
+        );
+      }
+
+      set({ history: history.slice(0, 50) });
     } catch (err) {
       console.warn('[TriageStore] Failed to load history:', err);
     }
@@ -436,6 +475,7 @@ export const useTriageStore = create<TriageState>((set, get) => ({
         }));
 
         return {
+          id: h.id,
           triageLevel: level,
           triageLabel: getTriageLabel(level),
           conditions,
@@ -444,11 +484,13 @@ export const useTriageStore = create<TriageState>((set, get) => ({
         };
       });
 
-      // Merge with local history: deduplicate by timestamp
+      // Merge with local history: deduplicate by session id (triage_id),
+      // bukan timestamp — timestamp lokal & cloud berbeda milidetik sehingga
+      // dedup by timestamp selalu gagal (penyebab riwayat dobel/triple).
       const existing = get().history;
-      const existingTimestamps = new Set(existing.map((r) => r.timestamp));
+      const existingIds = new Set(existing.map((r) => r.id).filter(Boolean));
       const newFromCloud = cloudHistory.filter(
-        (r) => !existingTimestamps.has(r.timestamp)
+        (r) => r.id && !existingIds.has(r.id)
       );
 
       if (newFromCloud.length > 0) {

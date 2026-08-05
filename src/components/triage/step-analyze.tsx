@@ -158,23 +158,9 @@ export default function StepAnalyze({ onComplete, onError }: StepAnalyzeProps) {
         };
         console.log('[AUDIT] AI Decision:', JSON.stringify(auditTrail));
 
-        // Simpan audit trail ke IndexedDB
-        try {
-          const { saveTriageSession } = await import('@/lib/db');
-          await saveTriageSession({
-            id: auditTrail.timestamp + '-' + Math.random().toString(36).slice(2, 8),
-            patientName: selectedPatient?.name || 'Unknown',
-            patientAge: selectedPatient?.age || 0,
-            patientGender: selectedPatient?.gender ?? 0,
-            triageLevel: level,
-            conditions: JSON.stringify(conditions.map(c => c.condition)),
-            confidence: prediction.maxProbability,
-            modelVersion: '1.0.0',
-            createdAt: new Date().toISOString(),
-          });
-        } catch (err) {
-          console.warn('[Audit] Failed to persist:', err);
-        }
+        // NOTE: Persistence ke IndexedDB HANYA dilakukan di store (addToHistory).
+        // Dulu ada double-write di sini (record audit id acak + record asli
+        // triageSessionId) yang menyebabkan duplikat di riwayat.
 
         // Brief delay for UX
         setTimeout(() => onComplete(result), 600);
