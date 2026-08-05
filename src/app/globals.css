@@ -124,3 +124,40 @@ body {
 .animate-progress {
   animation: progress 3s ease-in-out forwards;
 }
+
+/* ── Anti Browser/Extension Translate ──────────────────── */
+/* Bahasa dikelola aplikasi (ID/EN). Sembunyikan elemen UI yang
+   disuntikkan ekstensi translate (Google Translate & sejenisnya)
+   agar tidak bentrok/merusak tampilan. Meta `notranslate` +
+   `<html translate="no">` (layout.tsx) adalah lapisan utamanya.  */
+
+/* Tooltip/bubble translate saat teks dipilih */
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-te-balloon {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Banner "Translate this page?" yang disisipkan di atas halaman */
+.goog-te-banner-frame,
+iframe.goog-te-banner-frame {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Widget/gadget translate yang disuntikkan ekstensi */
+#google_translate_element,
+.goog-te-gadget,
+.goog-te-gadget-simple {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Jika translate dipaksa aktif, Google menambahkan class
+   translated-ltr/rtl pada <html> dan menggeser body — reset agar
+   layout aplikasi tidak bergeser/kehabisan ruang di atas */
+html.translated-ltr body,
+html.translated-rtl body {
+  top: 0 !important;
+}

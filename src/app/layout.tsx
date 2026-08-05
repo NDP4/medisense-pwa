@@ -25,6 +25,12 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'MediSense AI',
   },
+  // Nonaktifkan terjemahan otomatis Google (ekstensi + translate bawaan Chrome)
+  // supaya tidak bentrok dengan fitur bahasa aplikasi (ID/EN). Teks medis &
+  // hasil triase tidak boleh diterjemahkan mesin eksternal.
+  other: {
+    google: 'notranslate',
+  },
 };
 
 export const viewport: Viewport = {
@@ -40,7 +46,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" suppressHydrationWarning>
+    // translate="no": standar HTML5 — ekstensi translate yang menghormati
+    // standar tidak akan menerjemahkan halaman ini (bahasa dikelola aplikasi)
+    <html lang="id" translate="no" suppressHydrationWarning>
       <head>
         {/* PWA Service Worker Registration */}
         <script
