@@ -49,6 +49,7 @@ export interface TriageResult {
   recommendations: string[];
   timestamp: string;
   voiceText?: string; // transkrip keluhan suara (opsional)
+  patientName?: string; // nama pasien — HANYA dari perangkat (cloud anonim, tidak punya nama)
 }
 
 export type TriageStep = 1 | 2 | 3 | 4 | 5;
@@ -279,10 +280,12 @@ export const useTriageStore = create<TriageState>((set, get) => ({
     // Ikat hasil dengan triageSessionId agar bisa di-dedup terhadap cloud
     const sessionId = get().triageSessionId;
     const voice = get().voiceText;
+    const patient = get().selectedPatient;
     const finalResult = {
       ...result,
       ...(sessionId ? { id: sessionId } : {}),
       ...(voice ? { voiceText: voice } : {}),
+      ...(patient?.name ? { patientName: patient.name } : {}),
     };
 
     set({
@@ -369,6 +372,9 @@ export const useTriageStore = create<TriageState>((set, get) => ({
           recommendations: getRecommendations(level, conditionStrings),
           timestamp: h.createdAt,
           voiceText: h.voiceText || undefined,
+          // Record lokal punya nama pasien (terdekripsi); 'Unknown' = fallback
+          // lama saat nama tidak tersedia → jangan ditampilkan
+          patientName: h.patientName && h.patientName !== 'Unknown' ? h.patientName : undefined,
         };
       });
 

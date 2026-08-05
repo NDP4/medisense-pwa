@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, AlertTriangle, XCircle, Mic, Clock } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, Mic, Clock, User } from 'lucide-react';
 import Modal from '@/components/ui/modal';
 import {
   useT,
@@ -68,6 +68,13 @@ export default function TriageDetailModal({ item, onClose }: TriageDetailModalPr
           >
             {translateLevel(t, item.triageLevel)}
           </h2>
+          {/* Nama pasien — hanya tersedia dari record lokal (cloud anonim) */}
+          {item.patientName && (
+            <p className="text-sm font-medium text-text-primary mt-1.5 flex items-center gap-1.5">
+              <User className="w-4 h-4 text-text-secondary shrink-0" />
+              {item.patientName}
+            </p>
+          )}
           <p className="text-xs text-text-secondary mt-2 flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />
             {timeStr}
