@@ -64,6 +64,12 @@
 - ✅ **Modal detail menampilkan nama pasien** — `src/components/triage/triage-detail-modal.tsx`: nama (ikon User) tampil di bawah level triase, di atas waktu
 - ✅ Terverifikasi: typecheck 0 error, build 0 errors, 21 routes
 
+## Anti Translate Browser/Ekstensi (5 Agu 2026)
+- ✅ **`<html translate="no">`** — `src/app/layout.tsx`: standar HTML5, dihormati sebagian besar ekstensi translate → bahasa hanya dikelola aplikasi (ID/EN)
+- ✅ **`<meta name="google" content="notranslate">`** — via `metadata.other` di root layout: menonaktifkan translate otomatis Google (bawaan Chrome + ekstensi resmi) untuk seluruh aplikasi — melindungi teks medis & hasil triase dari terjemahan mesin yang salah
+- ✅ **CSS anti-translate** — `src/app/globals.css`: sembunyikan elemen eksternal (`#goog-gt-tt` tooltip, `.goog-te-banner-frame`, `.goog-te-gadget`, `#google_translate_element`) + reset `top` body saat translate dipaksa aktif (`html.translated-ltr/rtl`)
+- ⚠️ **Keterbatasan disadari** — web tidak bisa memblokir ekstensi secara absolut; ekstensi yang memaksa translate text-node tetap bisa jalan → rekomendasi: jangan pasang ekstensi translate di device pilot
+
 ## Release & CI (4 Agu 2026)
 - ✅ **Repo GitHub dibuat** — `NDP4/medisense-pwa` (PRIVATE), SSH user `NDP4`, default branch `main`, commit terakhir `5b4f3bf`
 - ✅ **CI hijau** — `.github/workflows/ci.yml`: `npm run lint` (interaktif, gagal di CI) → `npm run typecheck`; `actions/checkout@v4`→`@v5`, `setup-node@v4`→`@v5`; node-version 20→22 LTS; untrack `tsconfig.tsbuildinfo` + tambah `*.tsbuildinfo` ke `.gitignore`; `package-lock.json` kini ter-track (penyebab CI gagal pertama). Build: 0 errors, 21 routes, ±1m25s
@@ -230,6 +236,7 @@
 | 5 Agu 2026 | corex-frontend | **Fitur: Modal detail triase di History — ketuk kartu, tampil level/kondisi/confidence/voice/rekomendasi (i18n ID+EN) ✅** |
 | 5 Agu 2026 | corex-backend | **Fix: voice double text online (rebuild dari event.results) + alur unduh model Vosk dibalik (tombol saat online, notice saat offline, badge siap) ✅** |
 | 5 Agu 2026 | corex-backend | **Fitur: Nama pasien di modal detail triase — TriageResult.patientName (lokal saja, cloud tetap anonim) ✅** |
+| 5 Agu 2026 | corex-backend | **Anti translate browser/ekstensi — html translate=no + meta notranslate + CSS hide elemen ekstensi (melindungi teks medis) ✅** |
 
 ## Backend Status
 ### API Routes (✅ All implemented)

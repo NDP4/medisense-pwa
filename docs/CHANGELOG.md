@@ -7,6 +7,18 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.8.2] — 2026-08-05
+
+### Changed
+- **Anti bentrok dengan translate browser/ekstensi** — Fitur bahasa aplikasi (ID/EN) tidak boleh bertabrakan dengan terjemahan otomatis eksternal (bahaya: teks medis & hasil triase diterjemahkan mesin secara salah). Tiga lapis proteksi di `src/app/layout.tsx` + `src/app/globals.css`:
+  - `<html translate="no">` — standar HTML5, dihormati sebagian besar ekstensi translate.
+  - `<meta name="google" content="notranslate">` (via `metadata.other`) — menonaktifkan translate otomatis Google (fitur bawaan Chrome + ekstensi resmi Google Translate) untuk seluruh aplikasi.
+  - CSS anti-translate — menyembunyikan elemen UI yang disuntikkan ekstensi (`#goog-gt-tt` tooltip, `.goog-te-banner-frame` banner, `.goog-te-gadget` widget, `#google_translate_element`) + reset `top` body saat translate dipaksa aktif (`html.translated-ltr/rtl`).
+- **Keterbatasan yang disadari** — Web tidak bisa memblokir ekstensi secara absolut (bukan kemampuan platform, dan seharusnya bukan). Proteksi ini menonaktifkan Google Translate (bawaan + ekstensi resmi) dan ekstensi yang menghormati standar. Ekstensi yang memaksa menerjemahkan text-node secara paksa tetap bisa jalan — untuk perangkat pilot disarankan tidak memasang ekstensi translate.
+
+### Verified
+- Typecheck 0 error, build 0 errors (21 routes).
+
 ## [0.8.1] — 2026-08-05
 
 ### Fixed
