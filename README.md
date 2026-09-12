@@ -8,36 +8,36 @@
 
 ---
 
-## 📋 Latar Belakang Masalah
+## 📋 Background & Problem Statement
 
-Layanan kesehatan primer di wilayah **3T (Terdepan, Terluar, Tertinggal)** Indonesia menghadapi tantangan struktural yang masif:
-1. **Krisis Rasio Nakes**: Rasio dokter di wilayah 3T mencapai **1:8.400 penduduk**, jauh lebih buruk dari standar nasional (7x lipat lebih timpang). Beban operasional harian bertumpu pada kader kesehatan desa.
-2. **Keterbatasan Infrastruktur**: Sebagian besar desa 3T memiliki konektivitas internet yang sangat minim atau nihil, serta suplai listrik yang tidak stabil. Solusi *telemedicine* berbasis cloud konvensional gagal total di lapangan.
-3. **Keterlambatan Deteksi & Rujukan**: Keterbatasan instrumen diagnostik dini sering kali menyebabkan kasus kritis (seperti pre-eklamsia pada ibu hamil, infeksi pernapasan akut, dan gizi buruk balita) terlambat dideteksi, berujung pada tingginya angka morbiditas dan mortalitas yang dapat dicegah.
-
----
-
-## 🎯 Mengapa MediSense PWA Dibuat?
-
-**MediSense AI** hadir sebagai solusi teknologi kesehatan presisi yang dirancang khusus untuk memberdayakan kader kesehatan di lapangan tanpa bergantung pada koneksi internet:
-* **100% Offline-First (On-Device AI)**: Menggunakan **TensorFlow.js** untuk menjalankan inferensi model AI langsung di perangkat (smartphone *entry-level* RAM 2GB, Android 7.0+) tanpa latensi server atau kuota data.
-* **Triase Berkode Warna Otomatis**: Menerima input gejala multimodal (visual & klinis) dan memberikan rekomendasi instan:
-  * 🟢 **Hijau**: Rawat jalan / pemantauan mandiri kader.
-  * 🟡 **Kuning**: Rujukan dalam 24 jam ke Puskesmas pembantu.
-  * 🔴 **Merah**: Darurat medis kritis (segera hubungi layanan darurat 119).
-* **Desain Inklusif**: Antarmuka PWA berstandar tinggi yang ramah pengguna bagi kader dengan tingkat literasi digital dasar.
-* **Local-First Sync**: Menggunakan **Serwist** dan **IndexedDB (Dexie)** untuk penyimpanan lokal yang aman, dengan sinkronisasi asinkron ke **Supabase** saat perangkat mendeteksi sinyal internet.
+Primary healthcare services in **3T regions (Terdepan, Terluar, Tertinggal — Frontier, Outermost, Disadvantaged)** in Indonesia face massive structural challenges:
+1. **Severe Healthcare Disparity**: The doctor-to-patient ratio in 3T regions reaches **1:8,400**, which is 7 times worse than the national average. Daily operational burdens fall heavily on local village health cadres (*kader kesehatan*).
+2. **Infrastructure Constraints**: Most 3T villages suffer from unstable electricity and extremely limited or zero internet connectivity. Conventional cloud-based telemedicine solutions completely fail in these environments.
+3. **Delayed Detection & Referral**: The lack of early diagnostic tools often leads to critical medical conditions (such as pre-eclampsia in pregnant women, acute respiratory infections, and severe child malnutrition) being detected too late, resulting in preventable morbidity and mortality.
 
 ---
 
-## 📈 Dampak Setelah Aplikasi Dibuat
+## 🎯 Why MediSense PWA Was Built
 
-Setelah **MediSense PWA** diimplementasikan di wilayah operasional kesehatan primer:
-1. **Akselerasi Deteksi Dini 72 Jam Lebih Awal**: Kader kesehatan dapat mengidentifikasi tanda-tanda awal perburukan kondisi pasien sebelum gejala klinis menjadi parah, memotong rantai keterlambatan penanganan.
-2. **Efisiensi Sistem Rujukan Medis**: Mengurangi rasio rujukan salah sasaran (*false alarm*) ke rumah sakit kabupaten, menghemat biaya operasional pasien dan meringankan beban faskes rujukan tingkat lanjut.
-3. **Pemberdayaan Komunitas 3T**: Menjangkau lebih dari **63 juta penduduk** di wilayah terpencil melalui peningkatan kapasitas operasional kader kesehatan lokal dengan teknologi medis portabel berbasis AI.
-4. **Kontribusi Nyata SDGs 3**: Mendukung pencapaian Sustainable Development Goals poin *Good Health and Well-being*, khususnya penurunan Angka Kematian Ibu (AKI) dan Angka Kematian Bayi (AKB) di daerah tertinggal.
-5. **Inovasi Grand Final YESIST12 2026**: Membuktikan bahwa teknologi *Edge AI* berbiaya rendah dapat menyelesaikan masalah kemanusiaan global yang krusial secara inklusif dan berkelanjutan.
+**MediSense AI** was developed as a precision healthcare technology solution specifically designed to empower frontline health cadres without relying on internet connectivity:
+* **100% Offline-First (On-Device AI)**: Leverages **TensorFlow.js** to execute AI model inference directly on low-end mobile devices (entry-level smartphones with 2GB RAM, Android 7.0+) with zero server latency or data quota requirements.
+* **Automated Color-Coded Triage**: Accepts multimodal symptom inputs (visual & clinical) and instantly provides prioritized triage recommendations:
+  * 🟢 **Green**: Outpatient care / self-monitoring by cadres.
+  * 🟡 **Yellow**: Referral within 24 hours to local community health centers (Puskesmas).
+  * 🔴 **Red**: Critical medical emergency — immediate escalation to emergency response.
+* **Inclusive Design**: A high-standard PWA interface tailored specifically for users with basic digital literacy.
+* **Local-First Architecture**: Utilizes **Serwist** and **IndexedDB (Dexie)** for secure local storage, with asynchronous background synchronization to **Supabase** whenever an internet connection becomes available.
+
+---
+
+## 📈 Impact After Implementation
+
+Once **MediSense PWA** is deployed across primary healthcare operations:
+1. **Early Detection Accelerated by 72 Hours**: Health cadres can identify early signs of patient deterioration before clinical symptoms become severe, breaking the chain of delayed medical intervention.
+2. **Optimized Medical Referral Efficiency**: Reduces false-positive referrals to district hospitals, saving patient operational costs and easing the burden on advanced referral facilities.
+3. **Empowering 3T Communities**: Reaches over **63 million residents** in remote regions by upgrading the operational capacity of local health cadres with portable AI-driven clinical tools.
+4. **Contribution to SDGs 3**: Directly supports United Nations Sustainable Development Goals (Good Health and Well-being), specifically reducing Maternal Mortality Rate (MMR) and Infant Mortality Rate (IMR) in disadvantaged areas.
+5. **YESIST12 2026 Grand Final Innovation**: Demonstrates how low-cost Edge AI technology can inclusively and sustainably solve critical global humanitarian challenges.
 
 ---
 
@@ -46,12 +46,12 @@ Setelah **MediSense PWA** diimplementasikan di wilayah operasional kesehatan pri
 * **Frontend & Framework**: Next.js 15 (App Router), React 19, TypeScript
 * **Styling**: Tailwind CSS v4, Lucide React
 * **PWA & Offline Capability**: Serwist (`@serwist/next`), IndexedDB (`Dexie`)
-* **Machine Learning**: TensorFlow.js (On-Device inference model <50MB)
+* **Machine Learning**: TensorFlow.js (On-device inference model <50MB)
 * **Backend & State**: Supabase (`@supabase/supabase-js`), Zustand, Yjs (Real-time sync)
 
 ---
 
-## 🚀 Memulai (Quick Start)
+## 🚀 Quick Start
 
 ```bash
 # Clone repository
@@ -70,6 +70,6 @@ npm run dev
 
 ---
 
-## 📄 Lisensi
+## 📄 License
 
-Proyek ini dilisensikan di bawah [MIT License](LICENSE) — dikembangkan untuk kompetisi **YESIST12 2026 Grand Final**.
+This project is licensed under the [MIT License](LICENSE) — developed for the **YESIST12 2026 Grand Final**.
